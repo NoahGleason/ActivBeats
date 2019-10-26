@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context=".MainActivity">
+
+    <android.support.v7.widget.RecyclerView
+            android:layout_width="match_parent"
+            android:id="@+id/recyclerView"
+            android:layout_height="100dp"/>
+
+    <TextView
+            android:background="@color/colorPrimary"
+            android:id="@+id/pressureChangedTextView1"
+            android:layout_margin="8dp"
+            android:padding="8dp"
+            android:layout_below="@id/recyclerView"
+            android:textColor="@android:color/white"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+    <TextView
+            android:background="@color/colorPrimary"
+            android:id="@+id/pressureChangedTextView2"
+            android:textColor="@android:color/white"
+            android:layout_margin="8dp"
+            android:layout_toEndOf="@id/pressureChangedTextView1"
+            android:padding="8dp"
+            android:layout_width="wrap_content"
+            android:layout_below="@id/recyclerView"
+            android:layout_height="wrap_content"/>
+
+    <Button
+            android:background="@color/colorPrimary"
+            android:layout_margin="8dp"
+            android:padding="8dp"
+            android:id="@+id/connectButton"
+            android:textColor="@android:color/white"
+            android:text="@string/connect"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/pressureChangedTextView1"/>
+
+    <Button
+            android:background="@color/colorAccent"
+            android:layout_margin="8dp"
+            android:id="@+id/disconnectButton"
+            android:padding="8dp"
+            android:textColor="@android:color/white"
+            android:text="@string/disconnect"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toEndOf="@id/connectButton"
+            android:layout_below="@id/pressureChangedTextView1"/>
+
+    <Button
+            android:background="@color/colorAccent"
+            android:layout_margin="8dp"
+            android:padding="8dp"
+            android:id="@+id/sendStopCommandButton"
+            android:textColor="@android:color/white"
+            android:text="@string/stop_command"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/connectButton"/>
+
+    <Button
+            android:background="@color/colorPrimary"
+            android:layout_margin="8dp"
+            android:id="@+id/abortStopCommandButton"
+            android:padding="8dp"
+            android:textColor="@android:color/white"
+            android:text="@string/abort_stop_command"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toEndOf="@id/sendStopCommandButton"
+            android:layout_below="@id/connectButton"/>
+
+    <Button
+            android:background="@color/colorPrimaryDark"
+            android:layout_marginTop="8dp"
+            android:padding="8dp"
+            android:layout_marginStart="8dp"
+            android:id="@+id/startIsometricButton"
+            android:textColor="@android:color/white"
+            android:text="@string/start_isometric"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/abortStopCommandButton"/>
+
+    <Button
+            android:background="@color/colorPrimaryDark"
+            android:layout_marginTop="8dp"
+            android:padding="8dp"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp"
+            android:id="@+id/tareButton"
+            android:layout_toEndOf="@id/startIsometricButton"
+            android:textColor="@android:color/white"
+            android:text="@string/tare"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/abortStopCommandButton"/>
+
+    <Button
+            android:background="@color/colorPrimaryDark"
+            android:layout_marginTop="8dp"
+            android:padding="8dp"
+            android:layout_marginEnd="8dp"
+            android:id="@+id/scanDevices"
+            android:layout_toEndOf="@id/tareButton"
+            android:textColor="@android:color/white"
+            android:text="@string/scan_devices"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/abortStopCommandButton"/>
+</RelativeLayout>
