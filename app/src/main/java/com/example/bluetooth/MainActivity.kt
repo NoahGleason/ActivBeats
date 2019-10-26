@@ -172,8 +172,8 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         }
     }
 
-    private fun stretchTimeSeries(data : ArrayList<Int>, time : ArrayList<Long>, newLength : Int) : DoubleArray {
-        val toRet = DoubleArray(newLength)
+    private fun stretchTimeSeries(data : ArrayList<Int>, time : ArrayList<Long>, newLength : Int) : FloatArray {
+        val toRet = FloatArray(newLength)
         val start = time[0]
         val timeStep : Double = (time[time.size - 1] - start).toDouble() / (newLength - 1).toDouble()
         var currentIndex = 0
@@ -182,12 +182,12 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
             while(thisTime > (time[currentIndex + 1] - start)){
                 currentIndex++
                 if (currentIndex >= time.size - 1){
-                    toRet.fill(data[data.size - 1].toDouble(), i)
+                    toRet.fill(data[data.size - 1].toFloat(), i)
                     return toRet
                 }
             }
             val linearInterp : Double = (thisTime - (time[currentIndex] - start)) / (time[currentIndex + 1] - time[currentIndex]).toDouble()
-            toRet[i] = data[currentIndex].toDouble() + linearInterp*(data[currentIndex + 1] - data[currentIndex]).toDouble()
+            toRet[i] = data[currentIndex].toFloat() + linearInterp.toFloat()*(data[currentIndex + 1] - data[currentIndex]).toFloat()
         }
         return toRet
     }
@@ -196,7 +196,7 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         Log.v(TAG, "export started")
         var max = 1
         var averages = DoubleArray(readings.size)
-        var stretchedReadings = arrayListOf<DoubleArray>()
+        var stretchedReadings = arrayListOf<FloatArray>()
         for (i in readings.indices){
             var sum = 0
             for (j in readings[i]){
