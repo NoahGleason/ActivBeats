@@ -40,15 +40,9 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
     private var counter: Int = 0
     private var countDownTimer: CountDownTimer? = null
     private var timeIsoStarted: Long = 0
-    private val tracks = arrayOf(WavFile.openWavFile(resources.openRawResource(R.raw.layer1)),
-        WavFile.openWavFile(resources.openRawResource(R.raw.layer2)),
-        WavFile.openWavFile(resources.openRawResource(R.raw.layer3)),
-        WavFile.openWavFile(resources.openRawResource(R.raw.layer4)),
-        WavFile.openWavFile(resources.openRawResource(R.raw.layer5)),
-        WavFile.openWavFile(resources.openRawResource(R.raw.layer6)))
-    private val sampleRate = tracks[0].sampleRate
-    private val numFrames = tracks[0].numFrames
-    private val validBits = tracks[0].validBits
+    private var sampleRate: Long= 0
+    private var numFrames: Long = 0
+    private var validBits: Int = 0
     private var trackData = arrayListOf<ArrayList<Double>>()
 
     private lateinit var deviceAdapter: DeviceAdapter
@@ -91,6 +85,15 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        val tracks = arrayOf(WavFile.openWavFile(resources.openRawResource(R.raw.layer1)),
+            WavFile.openWavFile(resources.openRawResource(R.raw.layer2)),
+//            WavFile.openWavFile(resources.openRawResource(R.raw.layer3)),
+//            WavFile.openWavFile(resources.openRawResource(R.raw.layer4)),
+//            WavFile.openWavFile(resources.openRawResource(R.raw.layer5)),
+            WavFile.openWavFile(resources.openRawResource(R.raw.layer6)))
+        sampleRate = tracks[0].sampleRate
+        numFrames = tracks[0].numFrames
+        validBits = tracks[0].validBits
         for (track in tracks) {
             trackData.add(WavFile.getRaw(track, 0) as ArrayList<Double>)
         }
@@ -159,7 +162,7 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
 
     private fun manageReceiveIsometric(thisDevice: A5Device, thisValue: Int) {
         val time = System.currentTimeMillis()
-        if (time > timeIsoStarted + tracks[trackNums[trackNums.size - 1]].numFrames * 1000 / tracks[trackNums[trackNums.size - 1]].sampleRate){
+        if (time > timeIsoStarted + numFrames * 1000 / sampleRate){
             thisDevice.stop()
         } else {
             print(thisDevice.device.name, thisValue)
@@ -200,10 +203,10 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
                 max = kotlin.math.max(max, j)
             }
             averages[i] = sum.toDouble() / readings[i].size
-            stretchedReadings.add(stretchTimeSeries(readings[i], times[i], tracks[trackNums[i]].numFrames.toInt()))
+            stretchedReadings.add(stretchTimeSeries(readings[i], times[i],numFrames.toInt()))
         }
 
-        val outputFile = WavFile.newWavFile(FileOutputStream(File(getExternalFilesDir(null),filename)), 1, tracks[0].numFrames, tracks[0].validBits, tracks[0].sampleRate)
+        val outputFile = WavFile.newWavFile(FileOutputStream(File(getExternalFilesDir(null),filename)), 1, numFrames, validBits, sampleRate)
         var buffer = DoubleArray(BUFFER)
 
         var frameCounter = 0
