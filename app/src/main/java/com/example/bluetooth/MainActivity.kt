@@ -28,6 +28,7 @@ import kotlin.collections.ArrayList
 import kotlin.math.roundToInt
 
 private const val TAG = "ACTIVBEATS"
+private const val BUFFER = 100
 
 class MainActivity : AppCompatActivity(), A5BluetoothCallback {
 
@@ -45,6 +46,10 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         WavFile.openWavFile(resources.openRawResource(R.raw.layer4)),
         WavFile.openWavFile(resources.openRawResource(R.raw.layer5)),
         WavFile.openWavFile(resources.openRawResource(R.raw.layer6)))
+    private val sampleRate = tracks[0].sampleRate
+    private val numFrames = tracks[0].numFrames
+    private val validBits = tracks[0].validBits
+    private var trackData = arrayListOf<ArrayList<Double>>()
 
     private lateinit var deviceAdapter: DeviceAdapter
 
@@ -85,6 +90,10 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        for (track in tracks) {
+            trackData.add(WavFile.getRaw(track, 0) as ArrayList<Double>)
+        }
 
         requestPermission()
         initRecyclerView()
@@ -194,7 +203,36 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
             stretchedReadings.add(stretchTimeSeries(readings[i], times[i], tracks[trackNums[i]].numFrames.toInt()))
         }
 
-        val outputFile = WavFile.newWavFile(FileOutputStream(File(getExternalFilesDir(null),filename)), 1, )
+        val outputFile = WavFile.newWavFile(FileOutputStream(File(getExternalFilesDir(null),filename)), 1, tracks[0].numFrames, tracks[0].validBits, tracks[0].sampleRate)
+        var buffer = DoubleArray(BUFFER)
+
+        var frameCounter = 0
+
+        // Loop until all frames written
+        while (frameCounter < outputFile.numFrames) {
+            // Determine how many frames to write, up to a maximum of the buffer size
+            val remaining = outputFile.framesRemaining
+            val toWrite = if (remaining > 100) 100 else remaining.toInt()
+
+            // Fill the buffer
+            for (i in 0 until toWrite){
+                var dat = 0.0
+
+                //Add in each track
+                for (j in stretchedReadings.indices){
+                    dat += stretchedReadings[j][frameCounter]/max * trackData[trackNums[j]][frameCounter]/stretchedReadings.size
+                }
+
+                buffer[i] = dat
+
+                frameCounter++
+            }
+
+            // Write the buffer
+            outputFile.writeFrames(buffer, toWrite)
+        }
+
+        outputFile.close()
     }
 
     fun deviceSelected(device: A5Device) {
