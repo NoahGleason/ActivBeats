@@ -12,17 +12,21 @@ import android.os.CountDownTimer
 import a5.com.a5bluetoothlibrary.A5DeviceManager
 import a5.com.a5bluetoothlibrary.A5BluetoothCallback
 import a5.com.a5bluetoothlibrary.A5Device
+import android.content.res.Resources
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
 import android.util.Log
 import android.widget.Toast
+import com.example.bluetooth.wav.WavFile
 import kotlinx.android.synthetic.main.activity_main.*
+import java.io.File
+import java.io.FileOutputStream
 import java.util.*
+import kotlin.math.roundToInt
 
 private const val TAG = "ACTIVBEATS"
-private const val SONG_TIME_MILLIS: Long = 60 * 1000
 
 class MainActivity : AppCompatActivity(), A5BluetoothCallback {
 
@@ -33,6 +37,10 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
     private var counter: Int = 0
     private var countDownTimer: CountDownTimer? = null
     private var timeIsoStarted: Long = 0
+    private var sampleRate: Long = 0
+    private var numFrames: Long = 0
+    private var songTimeMillis: Long = 0
+    private var songData: DoubleArray? = null
 
     private lateinit var deviceAdapter: DeviceAdapter
 
@@ -73,6 +81,12 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        val wavFile = WavFile.openWavFile(resources.openRawResource(R.raw.layer1))
+        numFrames = wavFile.numFrames
+        sampleRate = wavFile.sampleRate
+        songTimeMillis = (numFrames*1000)/sampleRate
+        songData = WavFile.getRaw(wavFile, 1)
 
         requestPermission()
         initRecyclerView()
@@ -132,20 +146,24 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         }
     }
 
-    @Synchronized
-    private fun print2(name: String, value: Int) {
-        runOnUiThread {
-            pressureChangedTextView2.text =
-                String.format(
-                    Locale.US, "%s: %d", name, value
-                )
-        }
-    }
-
     private fun manageReceiveIsometric(thisDevice: A5Device, thisValue: Int) {
         val time = System.currentTimeMillis()
-        if (time > timeIsoStarted + SONG_TIME_MILLIS){
+        if (time > timeIsoStarted + songTimeMillis){
             thisDevice.stop()
+            var max = 1
+            //I came up wth this math at 5 AM sorry
+            val unitStep : Double = (readings.size - 1).toDouble() / (songData!!.size - 1).toDouble()
+            val inverseUnitStep = 1.0/unitStep
+            for (i in readings){
+                max = kotlin.math.max(max, i)
+            }
+            for (i in songData!!.indices){
+                val readingBelow = readings[(i.toDouble() * unitStep).toInt()]
+                val readingAbove = readings[kotlin.math.min(kotlin.math.ceil(i.toDouble() * unitStep).toInt(), readings.size-1)]
+                songData!![i] = songData!![i] * (readingBelow + (readingAbove - readingBelow)*unitStep
+                        *(i.toDouble() - kotlin.math.floor(i.toDouble()*unitStep)*inverseUnitStep))/max.toDouble()
+            }
+            WavFile.writeRaw(WavFile.newWavFile(FileOutputStream(File(getExternalFilesDir(null), "out.wav")),1,numFrames, 16, sampleRate), songData)
         } else {
             print(thisDevice.device.name, thisValue)
             readings.add(thisValue)
