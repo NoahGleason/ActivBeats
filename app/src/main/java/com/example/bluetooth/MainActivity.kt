@@ -88,25 +88,11 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
             device?.disconnect()
         }
 
-        sendStopCommandButton.setOnClickListener {
-            device?.stop()
-            startTimer()
-        }
-
-        abortStopCommandButton.setOnClickListener {
-            device?.startIsometric()
-            stopTimer()
-        }
-
         startIsometricButton.setOnClickListener {
             readings.clear()
             times.clear()
             timeIsoStarted = System.currentTimeMillis()
             device?.startIsometric()
-        }
-
-        tareButton.setOnClickListener {
-            device?.tare()
         }
 
         scanDevices.setOnClickListener {
