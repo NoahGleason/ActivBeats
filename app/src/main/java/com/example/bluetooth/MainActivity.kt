@@ -24,6 +24,7 @@ import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File
 import java.io.FileOutputStream
 import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.math.roundToInt
 
 private const val TAG = "ACTIVBEATS"
@@ -40,7 +41,7 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
     private var sampleRate: Long = 0
     private var numFrames: Long = 0
     private var songTimeMillis: Long = 0
-    private var songData: DoubleArray? = null
+    private var songData: ArrayList<Double> = ArrayList()
 
     private lateinit var deviceAdapter: DeviceAdapter
 
@@ -82,11 +83,11 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val wavFile = WavFile.openWavFile(resources.openRawResource(R.raw.layer1))
+        val wavFile = WavFile.openWavFile(resources.openRawResource(R.raw.shortl1))
         numFrames = wavFile.numFrames
         sampleRate = wavFile.sampleRate
         songTimeMillis = (numFrames*1000)/sampleRate
-        songData = WavFile.getRaw(wavFile, 1)
+        songData = WavFile.getRaw(wavFile, 1) as ArrayList<Double>
 
         requestPermission()
         initRecyclerView()
@@ -152,17 +153,19 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
             thisDevice.stop()
             var max = 1
             //I came up wth this math at 5 AM sorry
-            val unitStep : Double = (readings.size - 1).toDouble() / (songData!!.size - 1).toDouble()
+            val unitStep : Double = (readings.size - 1).toDouble() / (songData.size - 1).toDouble()
             val inverseUnitStep = 1.0/unitStep
             for (i in readings){
                 max = kotlin.math.max(max, i)
             }
-            for (i in songData!!.indices){
+            for (i in songData.indices){
                 val readingBelow = readings[(i.toDouble() * unitStep).toInt()]
                 val readingAbove = readings[kotlin.math.min(kotlin.math.ceil(i.toDouble() * unitStep).toInt(), readings.size-1)]
-                songData!![i] = songData!![i] * (readingBelow + (readingAbove - readingBelow)*unitStep
+                songData[i] = songData[i] * (readingBelow + (readingAbove - readingBelow)*unitStep
                         *(i.toDouble() - kotlin.math.floor(i.toDouble()*unitStep)*inverseUnitStep))/max.toDouble()
             }
+            val songDatLen = songData.size
+            Log.d(TAG, "numFrames: $numFrames, song data length: $songDatLen")
             WavFile.writeRaw(WavFile.newWavFile(FileOutputStream(File(getExternalFilesDir(null), "out.wav")),1,numFrames, 16, sampleRate), songData)
         } else {
             print(thisDevice.device.name, thisValue)

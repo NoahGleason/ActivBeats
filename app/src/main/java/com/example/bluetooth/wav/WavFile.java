@@ -8,7 +8,12 @@ package com.example.bluetooth.wav;// Wav file IO class
 
 // Version 1.0
 
+import android.util.Log;
+
 import java.io.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class WavFile
 {
@@ -688,17 +693,21 @@ public class WavFile
 		out.printf("Valid Bits: %d, Bytes per sample: %d\n", validBits, bytesPerSample);
 	}
 
-	public static double[] getRaw(WavFile wav, int channel) throws IOException, WavFileException {
+	public static List<Double> getRaw(WavFile wav, int channel) throws IOException, WavFileException {
 		double[][] buffer = new double[wav.getNumChannels()][100];
+		ArrayList<Double> toRet = new ArrayList<>();
 		int framesRead;
 		do {
 			framesRead = wav.readFrames(buffer, 100);
+			for (int i = 0; i < 100; i++) {
+				toRet.add(buffer[channel][i]);
+			}
 		} while (framesRead != 0);
 		wav.close();
-		return buffer[channel];
+		return toRet;
 	}
 
-	public static void writeRaw(WavFile wav, double[] data) throws IOException, WavFileException {
+	public static void writeRaw(WavFile wav, List<Double> data) throws IOException, WavFileException {
 		double[][] buffer = new double[wav.getNumChannels()][100];
 		// Initialise a local frame counter
 		long frameCounter = 0;
@@ -713,9 +722,13 @@ public class WavFile
 			// Fill the buffer, one tone per channel
 			for (int i=0 ; i<toWrite ; i++, frameCounter++)
 			{
-				for (int j = 0; j < wav.getNumChannels(); j++){
-					buffer[j][i] = data[(int) frameCounter];
+//				for (int j = 0; j < wav.getNumChannels(); j++){
+				if (frameCounter >= data.size()){
+					Log.d("WAV", "frameCounter: "+frameCounter+", toWrite: "+toWrite+", i: "+i);
 				}
+				double dat = data.get((int) frameCounter);
+				buffer[0][i] = dat;
+//				}
 			}
 
 			// Write the buffer
