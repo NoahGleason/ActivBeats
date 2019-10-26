@@ -17,6 +17,7 @@ import android.support.v4.content.ContextCompat
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
 import android.util.Log
+import android.widget.ImageView
 import android.widget.Toast
 import kotlinx.android.synthetic.main.activity_main.*
 import java.util.*
@@ -130,6 +131,8 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
 
     private fun manageReceiveIsometric(thisDevice: A5Device, thisValue: Int) {
         val time = System.currentTimeMillis()
+        var xCoord = 0.0f
+        var testImage: ImageView = findViewById(R.id.testImage)
         if (time > timeIsoStarted + SONG_TIME_MILLIS){
             thisDevice.stop()
         } else {
@@ -137,6 +140,9 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
             readings.add(thisValue)
             times.add(time)
             Log.v(TAG, "$time, $thisValue")
+            xCoord+=10
+            testImage.x = xCoord
+
         }
     }
 
