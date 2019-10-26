@@ -32,16 +32,19 @@ private const val TAG = "ACTIVBEATS"
 class MainActivity : AppCompatActivity(), A5BluetoothCallback {
 
     private var connectedDevices = mutableListOf<A5Device?>()
-    private var readings = arrayListOf<Int>()
-    private var times = arrayListOf<Long>()
+    private var readings = arrayListOf<ArrayList<Int>>()
+    private var times = arrayListOf<ArrayList<Long>>()
     private var device: A5Device? = null
     private var counter: Int = 0
     private var countDownTimer: CountDownTimer? = null
     private var timeIsoStarted: Long = 0
-    private var sampleRate: Long = 0
-    private var numFrames: Long = 0
-    private var songTimeMillis: Long = 0
-    private var songData = arrayListOf<Double>()
+    private var currentTrack = 0
+    private val tracks = arrayOf(WavFile.openWavFile(resources.openRawResource(R.raw.layer1)),
+        WavFile.openWavFile(resources.openRawResource(R.raw.layer2)),
+        WavFile.openWavFile(resources.openRawResource(R.raw.layer3)),
+        WavFile.openWavFile(resources.openRawResource(R.raw.layer4)),
+        WavFile.openWavFile(resources.openRawResource(R.raw.layer5)),
+        WavFile.openWavFile(resources.openRawResource(R.raw.layer6)))
 
     private lateinit var deviceAdapter: DeviceAdapter
 
@@ -83,12 +86,6 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val wavFile = WavFile.openWavFile(resources.openRawResource(R.raw.shortl1))
-        numFrames = wavFile.numFrames
-        sampleRate = wavFile.sampleRate
-        songTimeMillis = (numFrames*1000)/sampleRate
-        songData = WavFile.getRaw(wavFile, 1) as ArrayList<Double>
-
         requestPermission()
         initRecyclerView()
 
@@ -114,6 +111,7 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         }
 
         startIsometricButton.setOnClickListener {
+
             readings.clear()
             times.clear()
             timeIsoStarted = System.currentTimeMillis()
@@ -149,21 +147,12 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
 
     private fun manageReceiveIsometric(thisDevice: A5Device, thisValue: Int) {
         val time = System.currentTimeMillis()
-        if (time > timeIsoStarted + songTimeMillis){
+        if (time > timeIsoStarted + tracks[currentTrack].numFrames * 1000 / tracks[currentTrack].sampleRate){
             thisDevice.stop()
-            var max = 1
-            for (i in readings){
-                max = kotlin.math.max(max, i)
-            }
-            val stretchedReadings = stretchTimeSeries(readings, times, songData.size)
-            for (i in songData.indices){
-                songData[i] = songData[i]*stretchedReadings[i]/max.toDouble()
-            }
-            WavFile.writeRaw(WavFile.newWavFile(FileOutputStream(File(getExternalFilesDir(null), "out.wav")),1,numFrames, 16, sampleRate), songData)
         } else {
             print(thisDevice.device.name, thisValue)
-            readings.add(thisValue)
-            times.add(time)
+            readings[readings.size -1].add(thisValue)
+            times[times.size - 1].add(time)
             Log.v(TAG, "$time, $thisValue")
         }
     }
