@@ -26,24 +26,27 @@ import java.io.FileOutputStream
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.math.roundToInt
+import kotlin.math.roundToLong
 
 private const val TAG = "ACTIVBEATS"
 private const val BUFFER = 100
+private const val TRACK_LEN = 10.0
+private const val TRACK_LEN_MILLIS : Long = (TRACK_LEN * 1000).toLong()
+private const val MAX_STRENGTH = 150
 
 class MainActivity : AppCompatActivity(), A5BluetoothCallback {
 
     private var connectedDevices = mutableListOf<A5Device?>()
-    private var readings = arrayListOf<ArrayList<Int>>()
-    private var times = arrayListOf<ArrayList<Long>>()
-    private var trackNums = arrayListOf<Int>()
     private var device: A5Device? = null
     private var counter: Int = 0
     private var countDownTimer: CountDownTimer? = null
     private var timeIsoStarted: Long = 0
-    private var sampleRate: Long= 0
-    private var numFrames: Long = 0
-    private var validBits: Int = 0
-    private var trackData = arrayListOf<ArrayList<Double>>()
+    private var factories = arrayListOf<Sample.SampleFactory>()
+    private var currentlyHit = false
+    private var hitStart: Long = 0
+    private var hitMax = 0
+    private var samples = arrayListOf<Sample>()
+    private var instrument = 0
 
     private lateinit var deviceAdapter: DeviceAdapter
 
@@ -85,18 +88,10 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val tracks = arrayOf(WavFile.openWavFile(resources.openRawResource(R.raw.l1s)),
-            WavFile.openWavFile(resources.openRawResource(R.raw.l2s)),
-//            WavFile.openWavFile(resources.openRawResource(R.raw.layer3)),
-//            WavFile.openWavFile(resources.openRawResource(R.raw.layer4)),
-//            WavFile.openWavFile(resources.openRawResource(R.raw.layer5)),
-            WavFile.openWavFile(resources.openRawResource(R.raw.l3s)))
-        sampleRate = tracks[0].sampleRate
-        numFrames = tracks[0].numFrames
-        validBits = tracks[0].validBits
-        for (track in tracks) {
-            trackData.add(WavFile.getRaw(track, 0) as ArrayList<Double>)
-        }
+        factories = arrayListOf(Sample.SampleFactory(WavFile.openWavFile(resources.openRawResource(R.raw.snare))),
+        Sample.SampleFactory(WavFile.openWavFile(resources.openRawResource(R.raw.kick))),
+        Sample.SampleFactory(WavFile.openWavFile(resources.openRawResource(R.raw.highhat))),
+        Sample.SampleFactory(WavFile.openWavFile(resources.openRawResource(R.raw.tomtom))))
 
         requestPermission()
         initRecyclerView()
@@ -113,9 +108,6 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         }
 
         sendStopCommandButton.setOnClickListener {
-            readings.clear()
-            times.clear()
-            trackNums.clear()
             device?.stop()
             startTimer()
         }
@@ -126,10 +118,9 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         }
 
         startIsometricButton.setOnClickListener {
-            trackNums.add(trackIndex.text.toString().toInt())
+            currentlyHit = false
+            instrument = trackIndex.text.toString().toInt()
             timeIsoStarted = System.currentTimeMillis()
-            readings.add(ArrayList())
-            times.add(ArrayList())
             device?.startIsometric()
         }
 
@@ -162,13 +153,25 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
 
     private fun manageReceiveIsometric(thisDevice: A5Device, thisValue: Int) {
         val time = System.currentTimeMillis()
-        if (time > timeIsoStarted + numFrames * 1000 / sampleRate){
+        if (time > timeIsoStarted + TRACK_LEN_MILLIS){
             thisDevice.stop()
+            if (currentlyHit) {
+                samples.add(factories[instrument].getSample(hitMax /*- MAX_STRENGTH/4*/, timeIsoStarted + TRACK_LEN_MILLIS - hitStart, hitStart))
+            }
         } else {
             print(thisDevice.device.name, thisValue)
-            readings[readings.size -1].add(thisValue)
-            times[times.size - 1].add(time)
-            Log.v(TAG, "$time, $thisValue")
+            if (currentlyHit) {
+                if (thisValue < MAX_STRENGTH / 4){
+                    currentlyHit = false
+                    samples.add(factories[instrument].getSample(hitMax /*- MAX_STRENGTH/4*/, time - hitStart, hitStart))
+                } else {
+                    hitMax = kotlin.math.max(hitMax, thisValue)
+                }
+            } else if (thisValue >= MAX_STRENGTH / 4) {
+                currentlyHit = true
+                hitMax = thisValue
+                hitStart = time
+            }
         }
     }
 
@@ -194,20 +197,13 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
 
     private fun export(filename: String) {
         Log.v(TAG, "export started")
+
         var max = 1
-        var averages = DoubleArray(readings.size)
-        var stretchedReadings = arrayListOf<FloatArray>()
-        for (i in readings.indices){
-            var sum = 0
-            for (j in readings[i]){
-                sum += j
-                max = kotlin.math.max(max, j)
-            }
-            averages[i] = sum.toDouble() / readings[i].size
-            stretchedReadings.add(stretchTimeSeries(readings[i], times[i],numFrames.toInt()))
+        for (sample in samples){
+            max = kotlin.math.max(max, sample.peak)
         }
 
-        val outputFile = WavFile.newWavFile(FileOutputStream(File(getExternalFilesDir(null),filename)), 1, numFrames, validBits, sampleRate)
+        val outputFile = WavFile.newWavFile(FileOutputStream(File(getExternalFilesDir(null),filename)), 1, (factories[0].sampleRate * TRACK_LEN).toLong(), factories[0].validBits, factories[0].sampleRate)
 
         Log.v(TAG, "Output file opened")
 
@@ -226,9 +222,9 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
             for (i in 0 until toWrite){
                 var dat = 0.0
 
-                //Add in each track
-                for (j in stretchedReadings.indices){
-                    dat += stretchedReadings[j][frameCounter]/max * trackData[trackNums[j]][frameCounter]
+                //Add in each sample
+                for (sample in samples){
+                    dat += sample.getValueAtTime(frameCounter.toDouble() / outputFile.numFrames.toDouble() * TRACK_LEN)
                 }
 
                 buffer[i] = dat

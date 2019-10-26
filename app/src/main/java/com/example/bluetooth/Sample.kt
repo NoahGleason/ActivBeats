@@ -2,12 +2,19 @@ package com.example.bluetooth
 
 import com.example.bluetooth.wav.WavFile
 
-class Sample(private val peak: Int, private val duration: Double, private val start: Double, private val data : DoubleArray, private val naturalDuration: Double) {
+class Sample(
+    val peak: Int,
+    private val duration: Double,
+    private val start: Double,
+    private val data: DoubleArray
+) {
 
     class SampleFactory(wav: WavFile) {
 
         private var data : DoubleArray? = null
         private val naturalDuration : Double
+        val validBits : Int = wav.validBits
+        val sampleRate = wav.sampleRate
 
         init {
             val arrayListData = WavFile.getRaw(wav, 0)
@@ -19,7 +26,7 @@ class Sample(private val peak: Int, private val duration: Double, private val st
         }
 
         fun getSample(peak : Int, duration: Long, start: Long) : Sample {
-            return Sample(peak, duration.toDouble() / 1000.0, start.toDouble() / 1000.0, data!!, naturalDuration)
+            return Sample(peak, duration.toDouble() / 1000.0, start.toDouble() / 1000.0, data!!)
         }
     }
 
@@ -30,7 +37,7 @@ class Sample(private val peak: Int, private val duration: Double, private val st
             return 0.0
         }
         val index = (t - start) * ratio
-        return data[index.toInt()] + (data[kotlin.math.ceil(index).toInt()] - data[index.toInt()]) * (index - index.toInt())
+        return peak.toDouble() * (data[index.toInt()] + (data[kotlin.math.ceil(index).toInt()] - data[index.toInt()]) * (index - index.toInt()))
     }
 
 }
