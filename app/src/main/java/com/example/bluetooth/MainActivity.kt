@@ -41,7 +41,7 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
     private var sampleRate: Long = 0
     private var numFrames: Long = 0
     private var songTimeMillis: Long = 0
-    private var songData: ArrayList<Double> = ArrayList()
+    private var songData = arrayListOf<Double>()
 
     private lateinit var deviceAdapter: DeviceAdapter
 
@@ -152,20 +152,13 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         if (time > timeIsoStarted + songTimeMillis){
             thisDevice.stop()
             var max = 1
-            //I came up wth this math at 5 AM sorry
-            val unitStep : Double = (readings.size - 1).toDouble() / (songData.size - 1).toDouble()
-            val inverseUnitStep = 1.0/unitStep
             for (i in readings){
                 max = kotlin.math.max(max, i)
             }
+            val stretchedReadings = stretchTimeSeries(readings, times, songData.size)
             for (i in songData.indices){
-                val readingBelow = readings[(i.toDouble() * unitStep).toInt()]
-                val readingAbove = readings[kotlin.math.min(kotlin.math.ceil(i.toDouble() * unitStep).toInt(), readings.size-1)]
-                songData[i] = songData[i] * (readingBelow + (readingAbove - readingBelow)*unitStep
-                        *(i.toDouble() - kotlin.math.floor(i.toDouble()*unitStep)*inverseUnitStep))/max.toDouble()
+                songData[i] = songData[i]*stretchedReadings[i]/max.toDouble()
             }
-            val songDatLen = songData.size
-            Log.d(TAG, "numFrames: $numFrames, song data length: $songDatLen")
             WavFile.writeRaw(WavFile.newWavFile(FileOutputStream(File(getExternalFilesDir(null), "out.wav")),1,numFrames, 16, sampleRate), songData)
         } else {
             print(thisDevice.device.name, thisValue)
@@ -173,6 +166,26 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
             times.add(time)
             Log.v(TAG, "$time, $thisValue")
         }
+    }
+
+    private fun stretchTimeSeries(data : ArrayList<Int>, time : ArrayList<Long>, newLength : Int) : DoubleArray {
+        val toRet = DoubleArray(newLength)
+        val start = time[0]
+        val timeStep : Double = (time[time.size - 1] - start).toDouble() / (newLength - 1).toDouble()
+        var currentIndex = 0
+        for (i in toRet.indices) {
+            val thisTime = i*timeStep
+            while(thisTime > (time[currentIndex + 1] - start)){
+                currentIndex++
+                if (currentIndex >= time.size - 1){
+                    toRet.fill(data[data.size - 1].toDouble(), i)
+                    return toRet
+                }
+            }
+            val linearInterp : Double = (thisTime - (time[currentIndex] - start)) / (time[currentIndex + 1] - time[currentIndex]).toDouble()
+            toRet[i] = data[currentIndex].toDouble() + linearInterp*(data[currentIndex + 1] - data[currentIndex]).toDouble()
+        }
+        return toRet
     }
 
     fun deviceSelected(device: A5Device) {
