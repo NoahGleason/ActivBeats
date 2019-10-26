@@ -34,11 +34,11 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
     private var connectedDevices = mutableListOf<A5Device?>()
     private var readings = arrayListOf<ArrayList<Int>>()
     private var times = arrayListOf<ArrayList<Long>>()
+    private var trackNums = arrayListOf<Int>()
     private var device: A5Device? = null
     private var counter: Int = 0
     private var countDownTimer: CountDownTimer? = null
     private var timeIsoStarted: Long = 0
-    private var currentTrack = 0
     private val tracks = arrayOf(WavFile.openWavFile(resources.openRawResource(R.raw.layer1)),
         WavFile.openWavFile(resources.openRawResource(R.raw.layer2)),
         WavFile.openWavFile(resources.openRawResource(R.raw.layer3)),
@@ -101,6 +101,9 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         }
 
         sendStopCommandButton.setOnClickListener {
+            readings.clear()
+            times.clear()
+            trackNums.clear()
             device?.stop()
             startTimer()
         }
@@ -111,15 +114,15 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         }
 
         startIsometricButton.setOnClickListener {
-
-            readings.clear()
-            times.clear()
+            trackNums.add(trackIndex.text.toString().toInt())
             timeIsoStarted = System.currentTimeMillis()
+            readings.add(ArrayList())
+            times.add(ArrayList())
             device?.startIsometric()
         }
 
         tareButton.setOnClickListener {
-            device?.tare()
+            export("multitrack.wav")
         }
 
         scanDevices.setOnClickListener {
@@ -147,7 +150,7 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
 
     private fun manageReceiveIsometric(thisDevice: A5Device, thisValue: Int) {
         val time = System.currentTimeMillis()
-        if (time > timeIsoStarted + tracks[currentTrack].numFrames * 1000 / tracks[currentTrack].sampleRate){
+        if (time > timeIsoStarted + tracks[trackNums[trackNums.size - 1]].numFrames * 1000 / tracks[trackNums[trackNums.size - 1]].sampleRate){
             thisDevice.stop()
         } else {
             print(thisDevice.device.name, thisValue)
@@ -175,6 +178,23 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
             toRet[i] = data[currentIndex].toDouble() + linearInterp*(data[currentIndex + 1] - data[currentIndex]).toDouble()
         }
         return toRet
+    }
+
+    private fun export(filename: String) {
+        var max = 1
+        var averages = DoubleArray(readings.size)
+        var stretchedReadings = arrayListOf<DoubleArray>()
+        for (i in readings.indices){
+            var sum = 0
+            for (j in readings[i]){
+                sum += j
+                max = kotlin.math.max(max, j)
+            }
+            averages[i] = sum.toDouble() / readings[i].size
+            stretchedReadings.add(stretchTimeSeries(readings[i], times[i], tracks[trackNums[i]].numFrames.toInt()))
+        }
+
+        val outputFile = WavFile.newWavFile(FileOutputStream(File(getExternalFilesDir(null),filename)), 1, )
     }
 
     fun deviceSelected(device: A5Device) {
