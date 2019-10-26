@@ -85,12 +85,12 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val tracks = arrayOf(WavFile.openWavFile(resources.openRawResource(R.raw.layer1)),
-            WavFile.openWavFile(resources.openRawResource(R.raw.layer2)),
+        val tracks = arrayOf(WavFile.openWavFile(resources.openRawResource(R.raw.l1s)),
+            WavFile.openWavFile(resources.openRawResource(R.raw.l2s)),
 //            WavFile.openWavFile(resources.openRawResource(R.raw.layer3)),
 //            WavFile.openWavFile(resources.openRawResource(R.raw.layer4)),
 //            WavFile.openWavFile(resources.openRawResource(R.raw.layer5)),
-            WavFile.openWavFile(resources.openRawResource(R.raw.layer6)))
+            WavFile.openWavFile(resources.openRawResource(R.raw.l3s)))
         sampleRate = tracks[0].sampleRate
         numFrames = tracks[0].numFrames
         validBits = tracks[0].validBits
@@ -193,6 +193,7 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
     }
 
     private fun export(filename: String) {
+        Log.v(TAG, "export started")
         var max = 1
         var averages = DoubleArray(readings.size)
         var stretchedReadings = arrayListOf<DoubleArray>()
@@ -207,6 +208,9 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         }
 
         val outputFile = WavFile.newWavFile(FileOutputStream(File(getExternalFilesDir(null),filename)), 1, numFrames, validBits, sampleRate)
+
+        Log.v(TAG, "Output file opened")
+
         var buffer = DoubleArray(BUFFER)
 
         var frameCounter = 0
@@ -215,6 +219,7 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         while (frameCounter < outputFile.numFrames) {
             // Determine how many frames to write, up to a maximum of the buffer size
             val remaining = outputFile.framesRemaining
+            Log.v(TAG, "$remaining frames left")
             val toWrite = if (remaining > 100) 100 else remaining.toInt()
 
             // Fill the buffer
@@ -223,7 +228,7 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
 
                 //Add in each track
                 for (j in stretchedReadings.indices){
-                    dat += stretchedReadings[j][frameCounter]/max * trackData[trackNums[j]][frameCounter]/stretchedReadings.size
+                    dat += stretchedReadings[j][frameCounter]/max * trackData[trackNums[j]][frameCounter]
                 }
 
                 buffer[i] = dat
@@ -234,6 +239,8 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
             // Write the buffer
             outputFile.writeFrames(buffer, toWrite)
         }
+
+        Log.v(TAG, "Export finished")
 
         outputFile.close()
     }
