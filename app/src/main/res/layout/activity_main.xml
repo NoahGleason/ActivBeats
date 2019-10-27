@@ -116,4 +116,20 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_below="@id/abortStopCommandButton"/>
+
+    <Button
+        android:id="@+id/startCursor"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="148dp"
+        android:layout_marginTop="408dp"
+        android:layout_marginEnd="175dp"
+        android:layout_marginBottom="275dp"
+        android:background="@color/colorPrimaryDark"
+        android:text="Start" />
+
 </RelativeLayout>

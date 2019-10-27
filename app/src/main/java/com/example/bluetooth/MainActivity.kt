@@ -18,8 +18,11 @@ import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
 import android.util.Log
 import android.widget.Toast
+import android.widget.Button
 import kotlinx.android.synthetic.main.activity_main.*
 import java.util.*
+import android.media.MediaPlayer
+import android.view.MotionEvent
 
 private const val TAG = "ACTIVBEATS"
 private const val SONG_TIME_MILLIS: Long = 60 * 1000
@@ -33,6 +36,7 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
     private var counter: Int = 0
     private var countDownTimer: CountDownTimer? = null
     private var timeIsoStarted: Long = 0
+    private var mediaPlayer: MediaPlayer? = null
 
     private lateinit var deviceAdapter: DeviceAdapter
 
@@ -71,8 +75,18 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+            super.onCreate(savedInstanceState)
+            setContentView(R.layout.activity_main)
+
+            mediaPlayer = MediaPlayer.create(this, R.raw.oldtownroad)
+            mediaPlayer?.setOnPreparedListener {
+                println("READY TO GO")
+            }
+
+            startCursor.setOnTouchListener{ _, event ->
+                handleTouch(event)
+                true
+            }
 
         requestPermission()
         initRecyclerView()
@@ -101,12 +115,15 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         startIsometricButton.setOnClickListener {
             readings.clear()
             times.clear()
+            mediaPlayer?.start()
             timeIsoStarted = System.currentTimeMillis()
             device?.startIsometric()
         }
 
         tareButton.setOnClickListener {
             device?.tare()
+            mediaPlayer?.pause()
+            mediaPlayer?.seekTo(0)
         }
 
         scanDevices.setOnClickListener {
@@ -204,6 +221,26 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
             }
         } else {
             startBluetooth()
+        }
+    }
+
+    private fun handleTouch(event: MotionEvent){
+        Log.w(TAG,"touch")
+        when (event.action){
+            MotionEvent.ACTION_DOWN -> {
+                Log.d(TAG,"down")
+                println("down")
+                mediaPlayer?.start()
+            }
+            MotionEvent.ACTION_CANCEL, MotionEvent.ACTION_UP -> {
+                Log.d(TAG,"up")
+                println("up or cancel")
+                mediaPlayer?.pause()
+                mediaPlayer?.seekTo(0)
+            }
+            else -> {
+                println("other")
+            }
         }
     }
 
