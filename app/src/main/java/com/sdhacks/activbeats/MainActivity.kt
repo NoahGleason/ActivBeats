@@ -68,6 +68,7 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
     private var instrument = Instrument.Snare
     private var otrPlayer: MediaPlayer? = null
     private var switchedScreen = false
+    private var lastExport : Uri? = null
 
 
     private lateinit var deviceAdapter: DeviceAdapter
@@ -339,9 +340,21 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         Log.v(TAG, "Export finished")
 
         wavFile.close()
+        lastExport = Uri.fromFile(outFile)
 
-        val outputPlayer = MediaPlayer.create(this, Uri.fromFile(outFile))
+        val outputPlayer = MediaPlayer.create(this, lastExport)
         outputPlayer.start()
+    }
+
+    private fun shareLastExport() {
+        if (lastExport == null) {
+            Toast.makeText(this, "export first, then share!", Toast.LENGTH_SHORT).show()
+        } else {
+            val share = Intent(Intent.ACTION_SEND)
+            share.type = "audio/wav"
+            share.putExtra(Intent.EXTRA_STREAM, lastExport)
+            startActivity(Intent.createChooser(share, "Share Workout Mix"))
+        }
     }
 
     private fun stretchTimeSeries(data : ArrayList<Int>, time : ArrayList<Long>, newLength : Int) : FloatArray {
