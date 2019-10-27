@@ -19,7 +19,7 @@
     <string name="popup2">Beat: Snare Drum</string>
     <string name="popup3">Beat: Kick</string>
     <string name="popup4">Beat: Tom Tom</string>
-    <string name="start_beat">Snare</string>
+    <string name="start_beat">Hi Hat</string>
     <string name="current_beat">Current Beat:</string>
     <string name="reset">Reset</string>
     <string name="play_music">Play Music</string>

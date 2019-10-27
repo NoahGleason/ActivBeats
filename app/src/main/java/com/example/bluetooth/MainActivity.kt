@@ -27,12 +27,14 @@ import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.*
 import com.example.bluetooth.wav.WavFile
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File
 import java.io.FileOutputStream
 import java.util.*
+import kotlin.collections.ArrayList
 
 
 private const val TAG = "ACTIVBEATS"
@@ -41,6 +43,7 @@ private const val TRACK_LEN = 10.0
 private const val TRACK_LEN_MILLIS : Long = (TRACK_LEN * 1000).toLong()
 private const val MAX_STRENGTH = 150
 private const val APPROX_PERIOD = 100
+private const val MAGIC = 8
 
 private const val CURSOR_START = 300.0.toFloat()
 private const val CURSOR_END = 2035.0.toFloat()
@@ -48,7 +51,7 @@ private const val CURSOR_END = 2035.0.toFloat()
 class MainActivity : AppCompatActivity(), A5BluetoothCallback {
 
     enum class Instrument(val index: Int) {
-        Snare(0), Kick(1), HighHat(2), TomTom(3)
+        Snare(1), Kick(2), HighHat(0), TomTom(3)
     }
 
     private var connectedDevices = mutableListOf<A5Device?>()
@@ -62,8 +65,10 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
     private var hitStart: Long = 0
     private var hitMax = 0
     private var samples = arrayListOf<Sample>()
-    private var instrument = Instrument.Snare
+    private var instrument = Instrument.HighHat
     private var otrPlayer: MediaPlayer? = null
+    private var marginPos = intArrayOf(CURSOR_END.toInt(), CURSOR_END.toInt(), CURSOR_END.toInt(), CURSOR_END.toInt())
+    private var lines = arrayListOf(ArrayList<ImageView>(), ArrayList(), ArrayList(), ArrayList())
 
 
     private lateinit var deviceAdapter: DeviceAdapter
@@ -172,9 +177,10 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
             exportButton.visibility = View.VISIBLE
             currentbeat.visibility = View.VISIBLE
             beattype.visibility = View.VISIBLE
-            testMark.bringToFront()
             cursorWrapper.bringToFront()
             testImage.bringToFront()
+            cursorWrapper.x = CURSOR_START
+            cursorWrapper.y = 0.0f
         }
 
         startCursor.setOnClickListener {
@@ -207,6 +213,20 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         currentlyHit = false
         otrPlayer?.seekTo(0)
         otrPlayer?.start()
+        marginPos[instrument.index] = CURSOR_END.toInt()
+        runOnUiThread {
+            val layout = when(instrument){
+                Instrument.Snare -> snareLayout
+                Instrument.Kick -> kickLayout
+                Instrument.HighHat -> hihatLayout
+                Instrument.TomTom -> tomtomLayout
+            }
+
+            for (line in lines[instrument.index]){
+                layout.removeView(line)
+            }
+            lines[instrument.index].clear()
+        }
         timeIsoStarted = System.currentTimeMillis()
         device?.startIsometric()
     }
@@ -214,6 +234,47 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
     private fun onActivPress(time: Long, value: Int){
         players[instrument.index].seekTo(0)
         players[instrument.index].start()
+
+        runOnUiThread {
+            val marker = ImageView(this)
+            marker.setImageResource(R.drawable.mark)
+//            marker.layoutParams
+            val layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+
+            layoutParams.setMargins((cursorPosition(time) - marginPos[instrument.index]).toInt() - MAGIC, 0, 0, 0)
+//            layoutParams.setMargins(-MAGIC, 0, 0, 0)
+            marginPos[instrument.index] = cursorPosition(time).toInt()
+            marker.visibility = View.VISIBLE
+
+            val layout = when(instrument){
+                Instrument.Snare -> snareLayout
+                Instrument.Kick -> kickLayout
+                Instrument.HighHat -> hihatLayout
+                Instrument.TomTom -> tomtomLayout
+            }
+//            marker.x = 510.0f
+//            marker.y = 589.0f
+//            marker.maxHeight = 118
+//            marker.maxWidth = 3
+            layout.addView(marker, layoutParams)
+//        marker.x = cursorPosition(time)
+//        marker.y = TRACK_HEIGHT_PX * (instrument.index + 1)
+            layout.invalidate()
+//            trackLayout.bringToFront()
+//            marker.bringToFront()
+
+
+//            val kids = layout.childCount
+//            val thisX = marker.x
+//            val thisY = marker.y
+//
+//            Log.w(TAG, "$kids")
+//            Log.w(TAG, "($thisX, $thisY)")
+            lines[instrument.index].add(marker)
+        }
         currentlyHit = true
         hitMax = value
         hitStart = time
@@ -234,12 +295,17 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         }
     }
 
+    private fun cursorPosition(time: Long) : Float {
+        return CURSOR_START + (CURSOR_END - CURSOR_START) * (time - timeIsoStarted).toFloat() / TRACK_LEN_MILLIS.toFloat()
+    }
+
     private fun manageReceiveIsometric(thisDevice: A5Device, thisValue: Int) {
         val time = System.currentTimeMillis()
+//        print(thisDevice.device.name, thisValue)
         if (time > timeIsoStarted + TRACK_LEN_MILLIS) {
             thisDevice.stop()
             cursorWrapper.x = CURSOR_END
-            cursorWrapper.y = 0.0f
+//            cursorWrapper.y = 0.0f
             if (currentlyHit) {
                 onActivRelease(timeIsoStarted + TRACK_LEN_MILLIS, 0)
             }
@@ -250,12 +316,8 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
                     players[sample.instrument.index].start()
                 }
             }
-            testMark.x = 500.0f
-            testMark.y = 592.0f
-            cursorWrapper.x =
-                CURSOR_START + (CURSOR_END - CURSOR_START) * (time - timeIsoStarted).toFloat() / TRACK_LEN_MILLIS.toFloat()
+            cursorWrapper.x = cursorPosition(time)
             cursorWrapper.y = 0.0f
-            print(thisDevice.device.name, thisValue)
             if (currentlyHit) {
                 if (thisValue < MAX_STRENGTH / 4) {
                     onActivRelease(time, thisValue)
