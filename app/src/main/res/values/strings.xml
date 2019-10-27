@@ -19,17 +19,17 @@
     <string name="popup2">Beat: Snare Drum</string>
     <string name="popup3">Beat: Kick</string>
     <string name="popup4">Beat: Tom Tom</string>
-    <string name="start_beat">Hi Hat</string>
+    <string name="start_beat">Selected Beat: Hi Hat</string>
     <string name="current_beat">Current Beat:</string>
     <string name="reset">Reset</string>
     <string name="play_music">Play Music</string>
     <string name="go">Go</string>
     <string name="sisy_s_amazing_song_uwu">Sisy\'s Amazing Song UwU</string>
 
-    <string name="highhat">Hi Hat</string>
-    <string name="snare">Snare Drum</string>
-    <string name="kick">Kick</string>
-    <string name="tomtom">Tom Tom</string>
+    <string name="highhat">Selected Beat: Hi Hat</string>
+    <string name="snare">Selected Beat: Snare Drum</string>
+    <string name="kick">Selected Beat: Kick</string>
+    <string name="tomtom">Selected Beat: Tom Tom</string>
     <string name="share">Share</string>
     <string name="export">Export</string>
     <string name="back">Back</string>

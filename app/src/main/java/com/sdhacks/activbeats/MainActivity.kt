@@ -162,10 +162,15 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
             shareLastExport()
         }
 
+        disconnectButton.setOnClickListener {
+            device?.disconnect()
+        }
+
         goButton.setOnClickListener {
             recyclerView.visibility = View.INVISIBLE
             connectButton.visibility = View.INVISIBLE
             scanDevices.visibility = View.INVISIBLE
+            disconnectButton.visibility = View.INVISIBLE
             goButton.visibility = View.INVISIBLE
             tracksContainer.visibility = View.VISIBLE
             cursorWrapper.visibility = View.VISIBLE
@@ -177,7 +182,7 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
             emptyTrack4.visibility = View.VISIBLE
             startCursor.visibility = View.VISIBLE
             exportButton.visibility = View.VISIBLE
-            currentbeat.visibility = View.VISIBLE
+            //currentbeat.visibility = View.VISIBLE
             beattype.visibility = View.VISIBLE
             shareButton.visibility = View.VISIBLE
             backButton.visibility = View.VISIBLE
@@ -198,6 +203,7 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
             recyclerView.visibility = View.VISIBLE
             connectButton.visibility = View.VISIBLE
             scanDevices.visibility = View.VISIBLE
+            disconnectButton.visibility = View.VISIBLE
             goButton.visibility = View.VISIBLE
 
             tracksContainer.visibility = View.INVISIBLE
@@ -210,7 +216,7 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
             emptyTrack4.visibility = View.INVISIBLE
             startCursor.visibility = View.INVISIBLE
             exportButton.visibility = View.INVISIBLE
-            currentbeat.visibility = View.INVISIBLE
+            //currentbeat.visibility = View.INVISIBLE
             beattype.visibility = View.INVISIBLE
             shareButton.visibility = View.INVISIBLE
             backButton.visibility = View.INVISIBLE
