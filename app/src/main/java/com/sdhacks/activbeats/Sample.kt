@@ -61,7 +61,7 @@ class Sample(
         if (t < startingSample || t > endSample){
             return 0.0
         }
-        return data[((t-startingSample) * speedFrac).toInt()]
+        return peak.toDouble() * data[((t-startingSample) * speedFrac).toInt()]
     }
 
     override fun toString(): String {

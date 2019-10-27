@@ -19,6 +19,7 @@ import android.os.CountDownTimer
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
 import android.support.v4.content.ContextCompat.getSystemService
+import android.support.v4.content.FileProvider
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
 import android.transition.Slide
@@ -66,9 +67,11 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
     private var currentlyHit = false
     private var hitStart: Long = 0
     private var hitMax = 0
-    private var samples = arrayListOf<Sample>()
+    private var samples = arrayOf(arrayListOf(), arrayListOf(), arrayListOf(), arrayListOf<Sample>())
     private var instrument = Instrument.HighHat
     private var otrPlayer: MediaPlayer? = null
+    private var switchedScreen = false
+    private var lastExport : Uri? = null
     private var marginPos = intArrayOf(CURSOR_END.toInt(), CURSOR_END.toInt(), CURSOR_END.toInt(), CURSOR_END.toInt())
     private var lines = arrayListOf(ArrayList<ImageView>(), ArrayList(), ArrayList(), ArrayList())
 
@@ -159,6 +162,14 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
             A5DeviceManager.scanForDevices()
         }
 
+        exportButton.setOnClickListener {
+            export("activbeat.wav")
+        }
+
+        shareButton.setOnClickListener {
+            shareLastExport()
+        }
+
         goButton.setOnClickListener {
             textView.visibility = View.INVISIBLE
             recyclerView.visibility = View.INVISIBLE
@@ -179,8 +190,10 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
             exportButton.visibility = View.VISIBLE
             currentbeat.visibility = View.VISIBLE
             beattype.visibility = View.VISIBLE
+            shareButton.visibility = View.VISIBLE
             cursorWrapper.bringToFront()
             testImage.bringToFront()
+            switchedScreen = true
             cursorWrapper.x = CURSOR_START
             cursorWrapper.y = 0.0f
         }
@@ -190,24 +203,32 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         }
 
         emptyTrack1.setOnClickListener {
-            show_popup(R.layout.popup_1)
-            beattype.setText("Hi Hat")
-            instrument = Instrument.HighHat
+            if (System.currentTimeMillis() > timeIsoStarted + TRACK_LEN_MILLIS) {
+                show_popup(R.layout.popup_1)
+                beattype.text = resources.getString(R.string.highhat)
+                instrument = Instrument.HighHat
+            }
         }
         emptyTrack2.setOnClickListener {
-            show_popup(R.layout.popup_2)
-            beattype.setText("Snare Drum")
-            instrument = Instrument.Snare
+            if (System.currentTimeMillis() > timeIsoStarted + TRACK_LEN_MILLIS) {
+                show_popup(R.layout.popup_2)
+                beattype.text = resources.getString(R.string.snare)
+                instrument = Instrument.Snare
+            }
         }
         emptyTrack3.setOnClickListener {
-            show_popup(R.layout.popup_3)
-            beattype.setText("Kick")
-            instrument = Instrument.Kick
+            if (System.currentTimeMillis() > timeIsoStarted + TRACK_LEN_MILLIS) {
+                show_popup(R.layout.popup_3)
+                beattype.text = resources.getString(R.string.kick)
+                instrument = Instrument.Kick
+            }
         }
         emptyTrack4.setOnClickListener {
-            show_popup(R.layout.popup_4)
-            beattype.setText("Tom Tom")
-            instrument = Instrument.TomTom
+            if (System.currentTimeMillis() > timeIsoStarted + TRACK_LEN_MILLIS) {
+                show_popup(R.layout.popup_4)
+                beattype.text = resources.getString(R.string.tomtom)
+                instrument = Instrument.TomTom
+            }
         }
     }
 
@@ -215,6 +236,7 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         currentlyHit = false
         otrPlayer?.seekTo(0)
         otrPlayer?.start()
+        samples[instrument.index] = ArrayList()
         marginPos[instrument.index] = CURSOR_END.toInt()
         runOnUiThread {
             val layout = when(instrument){
@@ -267,7 +289,7 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
 
     private fun onActivRelease(time: Long, value: Int){
         currentlyHit = false
-        samples.add(factories[instrument.index].getSample(hitMax /*- MAX_STRENGTH/4*/, time - hitStart, hitStart - timeIsoStarted))
+        samples[instrument.index].add(factories[instrument.index].getSample(hitMax /*- MAX_STRENGTH/4*/, time - hitStart, hitStart - timeIsoStarted))
     }
 
     @Synchronized
@@ -287,30 +309,36 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
     private fun manageReceiveIsometric(thisDevice: A5Device, thisValue: Int) {
         val time = System.currentTimeMillis()
 //        print(thisDevice.device.name, thisValue)
-        if (time > timeIsoStarted + TRACK_LEN_MILLIS) {
-            thisDevice.stop()
-            cursorWrapper.x = CURSOR_END
-//            cursorWrapper.y = 0.0f
-            if (currentlyHit) {
-                onActivRelease(timeIsoStarted + TRACK_LEN_MILLIS, 0)
-            }
-        } else {
-            for (sample in samples) {
-                if (sample.instrument != instrument && sample.start * 1000 > (time - timeIsoStarted) && sample.start * 1000 < (time - timeIsoStarted) + APPROX_PERIOD) {
-                    players[sample.instrument.index].seekTo(0)
-                    players[sample.instrument.index].start()
+        if (switchedScreen) {
+            if (time > timeIsoStarted + TRACK_LEN_MILLIS) {
+                thisDevice.stop()
+                cursorWrapper.x = CURSOR_END
+                if (currentlyHit) {
+                    onActivRelease(timeIsoStarted + TRACK_LEN_MILLIS, 0)
                 }
-            }
-            cursorWrapper.x = cursorPosition(time)
-            cursorWrapper.y = 0.0f
-            if (currentlyHit) {
-                if (thisValue < MAX_STRENGTH / 4) {
-                    onActivRelease(time, thisValue)
-                } else {
-                    hitMax = kotlin.math.max(hitMax, thisValue)
+            } else {
+                if (currentlyHit) {
+                    if (thisValue < MAX_STRENGTH / 4) {
+                        onActivRelease(time, thisValue)
+                    } else {
+                        hitMax = kotlin.math.max(hitMax, thisValue)
+                    }
+                } else if (thisValue >= MAX_STRENGTH / 4) {
+                    onActivPress(time, thisValue)
                 }
-            } else if (thisValue >= MAX_STRENGTH / 4) {
-                onActivPress(time, thisValue)
+
+                for (otherInstrument in arrayOf(Instrument.Snare, Instrument.Kick, Instrument.HighHat, Instrument.TomTom)) {
+                    if (otherInstrument != instrument) {
+                        for (sample in samples[otherInstrument.index]) {
+                            if (sample.start * 1000 > (time - timeIsoStarted) && sample.start * 1000 < (time - timeIsoStarted) + APPROX_PERIOD) {
+                                players[sample.instrument.index].seekTo(0)
+                                players[sample.instrument.index].start()
+                            }
+                        }
+                    }
+                }
+                cursorWrapper.x = cursorPosition(time)
+                cursorWrapper.y = 0.0f
             }
         }
     }
@@ -319,9 +347,11 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         Log.v(TAG, "export started")
 
         var max = 1
-        for (sample in samples){
-            max = kotlin.math.max(max, sample.peak)
-            Log.v(TAG, "$sample")
+        for (sampleByInst in samples){
+            for (sample in sampleByInst) {
+                max = kotlin.math.max(max, sample.peak)
+                Log.v(TAG, "$sample")
+            }
         }
 
         val otrData = WavFile.getRaw(WavFile.openWavFile(resources.openRawResource(R.raw.otr)), 0)
@@ -347,8 +377,10 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
                 var dat = 0.0
 
                 //Add in each sample
-                for (sample in samples){
-                    dat += sample.getClipAtFrame(frameCounter)
+                for (sampleByInst in samples){
+                    for (sample in sampleByInst) {
+                        dat += sample.getClipAtFrame(frameCounter)/max
+                    }
                 }
                 dat += otrData[frameCounter.toInt()]
 
@@ -364,9 +396,22 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         Log.v(TAG, "Export finished")
 
         wavFile.close()
+        lastExport = FileProvider.getUriForFile(this, this.applicationContext.packageName + ".provider", outFile)
 
-        val outputPlayer = MediaPlayer.create(this, Uri.fromFile(outFile))
+        val outputPlayer = MediaPlayer.create(this, lastExport)
         outputPlayer.start()
+    }
+
+    private fun shareLastExport() {
+        if (lastExport == null) {
+            Toast.makeText(this, "export first, then share!", Toast.LENGTH_SHORT).show()
+        } else {
+            val share = Intent(Intent.ACTION_SEND)
+            share.type = "audio/wav"
+            share.putExtra(Intent.EXTRA_STREAM, lastExport)
+            share.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            startActivity(Intent.createChooser(share, "Share Workout Mix"))
+        }
     }
 
     private fun stretchTimeSeries(data : ArrayList<Int>, time : ArrayList<Long>, newLength : Int) : FloatArray {
