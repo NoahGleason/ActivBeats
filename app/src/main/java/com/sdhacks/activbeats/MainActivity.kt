@@ -142,10 +142,6 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
             }
         }
 
-        disconnectButton.setOnClickListener {
-            device?.disconnect()
-        }
-
         scanDevices.setOnClickListener {
             for (device in connectedDevices) {
                 device?.disconnect()
@@ -167,10 +163,8 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         }
 
         goButton.setOnClickListener {
-            textView.visibility = View.INVISIBLE
             recyclerView.visibility = View.INVISIBLE
             connectButton.visibility = View.INVISIBLE
-            disconnectButton.visibility = View.INVISIBLE
             scanDevices.visibility = View.INVISIBLE
             goButton.visibility = View.INVISIBLE
             tracksContainer.visibility = View.VISIBLE
@@ -201,10 +195,8 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         }
 
         backButton.setOnClickListener {
-            textView.visibility = View.VISIBLE
             recyclerView.visibility = View.VISIBLE
             connectButton.visibility = View.VISIBLE
-            disconnectButton.visibility = View.VISIBLE
             scanDevices.visibility = View.VISIBLE
             goButton.visibility = View.VISIBLE
 
