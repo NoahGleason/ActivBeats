@@ -53,7 +53,7 @@ private const val TIME_OFFSET_MILLIS = 50
 class MainActivity : AppCompatActivity(), A5BluetoothCallback {
 
     enum class Instrument(val index: Int) {
-        Snare(1), Kick(2), HighHat(0), TomTom(3)
+        Snare(0), Kick(1), HighHat(2), TomTom(3)
     }
 
     private var connectedDevices = mutableListOf<A5Device?>()
@@ -242,9 +242,9 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
                 LinearLayout.LayoutParams.WRAP_CONTENT
             )
 
-            layoutParams.setMargins((cursorPosition(time) - marginPos[instrument.index]).toInt() - MAGIC, 0, 0, 0)
+            layoutParams.setMargins((cursorPosition(time - TIME_OFFSET_MILLIS) - marginPos[instrument.index]).toInt() - MAGIC, 0, 0, 0)
 //            layoutParams.setMargins(-MAGIC, 0, 0, 0)
-            marginPos[instrument.index] = cursorPosition(time).toInt()
+            marginPos[instrument.index] = cursorPosition(time - TIME_OFFSET_MILLIS).toInt()
             marker.visibility = View.VISIBLE
 
             val layout = when(instrument){
