@@ -235,6 +235,8 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
 
         emptyTrack1.setOnClickListener {
             if (System.currentTimeMillis() > timeIsoStarted + TRACK_LEN_MILLIS) {
+                players[Instrument.HighHat.index].seekTo(0)
+                players[Instrument.HighHat.index].start()
                 show_popup(R.layout.popup_1)
                 beattype.text = resources.getString(R.string.highhat)
                 instrument = Instrument.HighHat
@@ -242,6 +244,8 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         }
         emptyTrack2.setOnClickListener {
             if (System.currentTimeMillis() > timeIsoStarted + TRACK_LEN_MILLIS) {
+                players[Instrument.Snare.index].seekTo(0)
+                players[Instrument.Snare.index].start()
                 show_popup(R.layout.popup_2)
                 beattype.text = resources.getString(R.string.snare)
                 instrument = Instrument.Snare
@@ -249,6 +253,8 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         }
         emptyTrack3.setOnClickListener {
             if (System.currentTimeMillis() > timeIsoStarted + TRACK_LEN_MILLIS) {
+                players[Instrument.Kick.index].seekTo(0)
+                players[Instrument.Kick.index].start()
                 show_popup(R.layout.popup_3)
                 beattype.text = resources.getString(R.string.kick)
                 instrument = Instrument.Kick
@@ -256,6 +262,8 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         }
         emptyTrack4.setOnClickListener {
             if (System.currentTimeMillis() > timeIsoStarted + TRACK_LEN_MILLIS) {
+                players[Instrument.TomTom.index].seekTo(0)
+                players[Instrument.TomTom.index].start()
                 show_popup(R.layout.popup_4)
                 beattype.text = resources.getString(R.string.tomtom)
                 instrument = Instrument.TomTom
