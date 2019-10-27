@@ -1,4 +1,4 @@
-package com.example.bluetooth.wav;// Wav file IO class
+package com.sdhacks.activbeats.wav;// Wav file IO class
 // A.Greensted
 // http://www.labbookpages.co.uk
 
@@ -12,7 +12,6 @@ import android.util.Log;
 
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class WavFile
