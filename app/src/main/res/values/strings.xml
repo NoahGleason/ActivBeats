@@ -30,5 +30,7 @@
     <string name="snare">Snare Drum</string>
     <string name="kick">Kick</string>
     <string name="tomtom">Tom Tom</string>
+    <string name="share">Share</string>
+    <string name="export">Export</string>
 
 </resources>

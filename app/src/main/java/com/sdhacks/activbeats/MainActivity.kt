@@ -19,6 +19,7 @@ import android.os.CountDownTimer
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
 import android.support.v4.content.ContextCompat.getSystemService
+import android.support.v4.content.FileProvider
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
 import android.transition.Slide
@@ -161,6 +162,14 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
             A5DeviceManager.scanForDevices()
         }
 
+        exportButton.setOnClickListener {
+            export("activbeat.wav")
+        }
+
+        shareButton.setOnClickListener {
+            shareLastExport()
+        }
+
         goButton.setOnClickListener {
             textView.visibility = View.INVISIBLE
             recyclerView.visibility = View.INVISIBLE
@@ -181,6 +190,7 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
             exportButton.visibility = View.VISIBLE
             currentbeat.visibility = View.VISIBLE
             beattype.visibility = View.VISIBLE
+            shareButton.visibility = View.VISIBLE
             cursorWrapper.bringToFront()
             testImage.bringToFront()
             switchedScreen = true
@@ -369,7 +379,7 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
                 //Add in each sample
                 for (sampleByInst in samples){
                     for (sample in sampleByInst) {
-                        dat += sample.getClipAtFrame(frameCounter)
+                        dat += sample.getClipAtFrame(frameCounter)/max
                     }
                 }
                 dat += otrData[frameCounter.toInt()]
@@ -386,7 +396,7 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         Log.v(TAG, "Export finished")
 
         wavFile.close()
-        lastExport = Uri.fromFile(outFile)
+        lastExport = FileProvider.getUriForFile(this, this.applicationContext.packageName + ".provider", outFile)
 
         val outputPlayer = MediaPlayer.create(this, lastExport)
         outputPlayer.start()
@@ -399,6 +409,7 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
             val share = Intent(Intent.ACTION_SEND)
             share.type = "audio/wav"
             share.putExtra(Intent.EXTRA_STREAM, lastExport)
+            share.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             startActivity(Intent.createChooser(share, "Share Workout Mix"))
         }
     }
