@@ -107,6 +107,7 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
 
         sendStopCommandButton.setOnClickListener {
             device?.stop()
+            samples.clear()
             startTimer()
         }
 
@@ -228,8 +229,6 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
                 for (sample in samples){
                     dat += sample.getClipAtFrame(frameCounter)
                 }
-
-//                Log.v(TAG, "dat: $dat")
 
                 buffer[i] = dat
 
