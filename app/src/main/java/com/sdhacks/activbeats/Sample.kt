@@ -1,7 +1,6 @@
-package com.example.bluetooth
+package com.sdhacks.activbeats
 
-import android.util.Log
-import com.example.bluetooth.wav.WavFile
+import com.sdhacks.activbeats.wav.WavFile
 
 class Sample(
     val peak: Int,

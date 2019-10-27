@@ -1,4 +1,4 @@
-package com.example.bluetooth.wav;
+package com.sdhacks.activbeats.wav;
 
 public class WavFileException extends Exception
 {
