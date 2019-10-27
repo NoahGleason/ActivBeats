@@ -3,7 +3,7 @@
     android:id="@+id/linear_layout"
     android:layout_width="1500px"
     android:layout_height="750px"
-    android:background="#ffbb33"
+    android:background="#5271ff"
     android:orientation="horizontal"
     android:padding="40px">
 
