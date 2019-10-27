@@ -28,7 +28,7 @@ class Sample(
         }
 
         fun getSample(peak : Int, duration: Long, start: Long) : Sample {
-//            return Sample(peak, duration.toDouble() / 1000.0, start.toDouble() / 1000.0, data!!, sampleRate)
+//            return Sample(peak, duration.toDouble() / 1000.0, start.toDouble() / 1000.0, data!!, sampleRate, instrument)
             return Sample(peak, naturalDuration, start.toDouble() / 1000.0, data!!, sampleRate, instrument)
 
         }
