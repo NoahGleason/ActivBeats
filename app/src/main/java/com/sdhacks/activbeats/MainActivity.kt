@@ -1,4 +1,4 @@
-package com.example.bluetooth
+package com.sdhacks.activbeats
 
 import a5.com.a5bluetoothlibrary.A5BluetoothCallback
 import a5.com.a5bluetoothlibrary.A5Device
@@ -28,7 +28,7 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.*
-import com.example.bluetooth.wav.WavFile
+import com.sdhacks.activbeats.wav.WavFile
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File
 import java.io.FileOutputStream

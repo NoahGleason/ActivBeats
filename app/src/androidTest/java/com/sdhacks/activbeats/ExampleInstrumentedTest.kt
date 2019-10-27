@@ -1,4 +1,4 @@
-package com.example.bluetooth
+package com.sdhacks.activbeats
 
 import android.support.test.InstrumentationRegistry
 import android.support.test.runner.AndroidJUnit4

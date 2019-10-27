@@ -1,4 +1,4 @@
-package com.example.bluetooth
+package com.sdhacks.activbeats
 
 import org.junit.Test
 
