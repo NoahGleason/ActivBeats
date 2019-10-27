@@ -39,11 +39,13 @@ private const val TAG = "ACTIVBEATS"
 private const val BUFFER = 100
 private const val TRACK_LEN = 10.0
 private const val TRACK_LEN_MILLIS : Long = (TRACK_LEN * 1000).toLong()
-private const val MAX_STRENGTH = 150
+private const val MAX_STRENGTH = 100
 private const val APPROX_PERIOD = 100
 
 private const val CURSOR_START = 300.0.toFloat()
 private const val CURSOR_END = 2035.0.toFloat()
+
+private const val TIME_OFFSET_MILLIS = 50
 
 class MainActivity : AppCompatActivity(), A5BluetoothCallback {
 
@@ -213,11 +215,11 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
     }
 
     private fun onActivPress(time: Long, value: Int){
-        players[instrument.index].seekTo(0)
-        players[instrument.index].start()
+//        players[instrument.index].seekTo(0)
+//        players[instrument.index].start()
         currentlyHit = true
         hitMax = value
-        hitStart = time
+        hitStart = time - TIME_OFFSET_MILLIS
     }
 
     private fun onActivRelease(time: Long, value: Int){
@@ -274,12 +276,14 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
             Log.v(TAG, "$sample")
         }
 
+        val otrData = WavFile.getRaw(WavFile.openWavFile(resources.openRawResource(R.raw.otr)), 0)
         val outFile = File(getExternalFilesDir(null),filename)
-        val wavFile = WavFile.newWavFile(FileOutputStream(outFile), 1, (factories[0].sampleRate * TRACK_LEN).toLong(), factories[0].validBits, factories[0].sampleRate)
+        val wavFile = WavFile.newWavFile(FileOutputStream(outFile), 1,
+            (otrData.size - 1).toLong(), factories[0].validBits, factories[0].sampleRate)
+
+        val buffer = DoubleArray(BUFFER)
 
         Log.v(TAG, "Output file opened")
-
-        var buffer = DoubleArray(BUFFER)
 
         var frameCounter: Long = 0
 
@@ -288,7 +292,7 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
             // Determine how many frames to write, up to a maximum of the buffer size
             val remaining = wavFile.framesRemaining
 //            Log.v(TAG, "$remaining frames left")
-            val toWrite = if (remaining > 100) 100 else remaining.toInt()
+            val toWrite = if (remaining > BUFFER) BUFFER else remaining.toInt()
 
             // Fill the buffer
             for (i in 0 until toWrite){
@@ -298,6 +302,7 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
                 for (sample in samples){
                     dat += sample.getClipAtFrame(frameCounter)
                 }
+                dat += otrData[frameCounter.toInt()]
 
                 buffer[i] = dat
 
