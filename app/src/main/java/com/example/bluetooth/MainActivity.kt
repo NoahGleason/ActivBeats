@@ -38,7 +38,7 @@ private const val TAG = "ACTIVBEATS"
 private const val BUFFER = 100
 private const val TRACK_LEN = 10.0
 private const val TRACK_LEN_MILLIS : Long = (TRACK_LEN * 1000).toLong()
-private const val MAX_STRENGTH = 150
+private const val MAX_STRENGTH = 100
 private const val APPROX_PERIOD = 100
 
 private const val CURSOR_START = 300.0.toFloat()
