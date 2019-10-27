@@ -18,6 +18,7 @@ import android.os.Bundle
 import android.os.CountDownTimer
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
+import android.support.v4.content.ContextCompat.getSystemService
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
 import android.transition.Slide
@@ -137,7 +138,7 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         startIsometricButton.setOnClickListener {
             onRecordPressed()
         }
-        
+
         scanDevices.setOnClickListener {
             for (device in connectedDevices) {
                 device?.disconnect()
@@ -236,23 +237,24 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
 
     private fun manageReceiveIsometric(thisDevice: A5Device, thisValue: Int) {
         val time = System.currentTimeMillis()
-        if (time > timeIsoStarted + TRACK_LEN_MILLIS){
+        if (time > timeIsoStarted + TRACK_LEN_MILLIS) {
             thisDevice.stop()
             testImage.x = CURSOR_END
             if (currentlyHit) {
                 onActivRelease(timeIsoStarted + TRACK_LEN_MILLIS, 0)
             }
         } else {
-            for (sample in samples){
-                if (sample.instrument != instrument && sample.start*1000 > (time-timeIsoStarted) && sample.start*1000 < (time-timeIsoStarted) + APPROX_PERIOD){
+            for (sample in samples) {
+                if (sample.instrument != instrument && sample.start * 1000 > (time - timeIsoStarted) && sample.start * 1000 < (time - timeIsoStarted) + APPROX_PERIOD) {
                     players[sample.instrument.index].seekTo(0)
                     players[sample.instrument.index].start()
                 }
             }
-            testImage.x = CURSOR_START + (CURSOR_END - CURSOR_START) * (time - timeIsoStarted).toFloat()/ TRACK_LEN_MILLIS.toFloat()
+            testImage.x =
+                CURSOR_START + (CURSOR_END - CURSOR_START) * (time - timeIsoStarted).toFloat() / TRACK_LEN_MILLIS.toFloat()
             print(thisDevice.device.name, thisValue)
             if (currentlyHit) {
-                if (thisValue < MAX_STRENGTH / 4){
+                if (thisValue < MAX_STRENGTH / 4) {
                     onActivRelease(time, thisValue)
                 } else {
                     hitMax = kotlin.math.max(hitMax, thisValue)
@@ -333,7 +335,7 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         }
         return toRet
     }
-    
+
     fun deviceSelected(device: A5Device) {
         this.device = device
         Toast.makeText(this, "device selected: " + device.device.name, Toast.LENGTH_SHORT).show()
@@ -463,8 +465,8 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         // Initialize a new instance of popup window
         val popupWindow = PopupWindow(
             view, // Custom view to show in popup window
-            LinearLayout.LayoutParams.WRAP_CONTENT, // Width of popup window
-            LinearLayout.LayoutParams.WRAP_CONTENT // Window height
+            1500, // Width of popup window
+            750 // Window height
         )
 
         // Set an elevation for the popup window
@@ -482,7 +484,7 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
 
             // Slide animation for popup window exit transition
             val slideOut = Slide()
-            slideOut.slideEdge = Gravity.RIGHT
+            slideOut.slideEdge = Gravity.TOP
             popupWindow.exitTransition = slideOut
 
         }
@@ -492,10 +494,10 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         val buttonPopup = view.findViewById<Button>(R.id.button_popup)
 
         // Set click listener for popup window's text view
-        tv.setOnClickListener{
+        //tv.setOnClickListener{
             // Change the text color of popup window's text view
-            tv.setTextColor(Color.RED)
-        }
+            //tv.setTextColor(Color.RED)
+        //}
 
         // Set a click listener for popup's button widget
         buttonPopup.setOnClickListener{
