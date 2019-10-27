@@ -27,6 +27,7 @@ import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.*
 import com.sdhacks.activbeats.wav.WavFile
 import kotlinx.android.synthetic.main.activity_main.*
@@ -42,6 +43,7 @@ private const val TRACK_LEN = 10.0
 private const val TRACK_LEN_MILLIS : Long = (TRACK_LEN * 1000).toLong()
 private const val MAX_STRENGTH = 100
 private const val APPROX_PERIOD = 100
+private const val MAGIC = 8
 
 private const val CURSOR_START = 300.0.toFloat()
 private const val CURSOR_END = 2035.0.toFloat()
@@ -65,10 +67,12 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
     private var hitStart: Long = 0
     private var hitMax = 0
     private var samples = arrayOf(arrayListOf(), arrayListOf(), arrayListOf(), arrayListOf<Sample>())
-    private var instrument = Instrument.Snare
+    private var instrument = Instrument.HighHat
     private var otrPlayer: MediaPlayer? = null
     private var switchedScreen = false
     private var lastExport : Uri? = null
+    private var marginPos = intArrayOf(CURSOR_END.toInt(), CURSOR_END.toInt(), CURSOR_END.toInt(), CURSOR_END.toInt())
+    private var lines = arrayListOf(ArrayList<ImageView>(), ArrayList(), ArrayList(), ArrayList())
 
 
     private lateinit var deviceAdapter: DeviceAdapter
@@ -112,7 +116,8 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        testImage.x = CURSOR_START
+        cursorWrapper.x = CURSOR_START
+        cursorWrapper.y = 0.0f
 
         otrPlayer = MediaPlayer.create(this, R.raw.otr)
 
@@ -165,6 +170,7 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
             scanDevices.visibility = View.INVISIBLE
             goButton.visibility = View.INVISIBLE
             tracksContainer.visibility = View.VISIBLE
+            cursorWrapper.visibility = View.VISIBLE
             testImage.visibility = View.VISIBLE
             otrTrack.visibility = View.VISIBLE
             emptyTrack1.visibility = View.VISIBLE
@@ -172,20 +178,18 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
             emptyTrack3.visibility = View.VISIBLE
             emptyTrack4.visibility = View.VISIBLE
             startCursor.visibility = View.VISIBLE
-            resetCursor.visibility = View.VISIBLE
+            exportButton.visibility = View.VISIBLE
             currentbeat.visibility = View.VISIBLE
             beattype.visibility = View.VISIBLE
+            cursorWrapper.bringToFront()
             testImage.bringToFront()
             switchedScreen = true
+            cursorWrapper.x = CURSOR_START
+            cursorWrapper.y = 0.0f
         }
 
         startCursor.setOnClickListener {
             onRecordPressed()
-        }
-
-        resetCursor.setOnClickListener {
-            testImage.x = CURSOR_START
-            otrPlayer?.stop()
         }
 
         emptyTrack1.setOnClickListener {
@@ -223,11 +227,49 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         otrPlayer?.seekTo(0)
         otrPlayer?.start()
         samples[instrument.index] = ArrayList()
+        marginPos[instrument.index] = CURSOR_END.toInt()
+        runOnUiThread {
+            val layout = when(instrument){
+                Instrument.Snare -> snareLayout
+                Instrument.Kick -> kickLayout
+                Instrument.HighHat -> hihatLayout
+                Instrument.TomTom -> tomtomLayout
+            }
+
+            for (line in lines[instrument.index]){
+                layout.removeView(line)
+            }
+            lines[instrument.index].clear()
+        }
         timeIsoStarted = System.currentTimeMillis()
         device?.startIsometric()
     }
 
     private fun onActivPress(time: Long, value: Int){
+        runOnUiThread {
+            val marker = ImageView(this)
+            marker.setImageResource(R.drawable.mark)
+            val layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+
+            layoutParams.setMargins((cursorPosition(time - TIME_OFFSET_MILLIS) - marginPos[instrument.index]).toInt() - MAGIC, 0, 0, 0)
+//            layoutParams.setMargins(-MAGIC, 0, 0, 0)
+            marginPos[instrument.index] = cursorPosition(time - TIME_OFFSET_MILLIS).toInt()
+            marker.visibility = View.VISIBLE
+
+            val layout = when(instrument){
+                Instrument.Snare -> snareLayout
+                Instrument.Kick -> kickLayout
+                Instrument.HighHat -> hihatLayout
+                Instrument.TomTom -> tomtomLayout
+            }
+
+            layout.addView(marker, layoutParams)
+            layout.invalidate()
+            lines[instrument.index].add(marker)
+        }
 //        players[instrument.index].seekTo(0)
 //        players[instrument.index].start()
         currentlyHit = true
@@ -250,13 +292,17 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         }
     }
 
+    private fun cursorPosition(time: Long) : Float {
+        return CURSOR_START + (CURSOR_END - CURSOR_START) * (time - timeIsoStarted).toFloat() / TRACK_LEN_MILLIS.toFloat()
+    }
+
     private fun manageReceiveIsometric(thisDevice: A5Device, thisValue: Int) {
         val time = System.currentTimeMillis()
-        print(thisDevice.device.name, thisValue)
+//        print(thisDevice.device.name, thisValue)
         if (switchedScreen) {
             if (time > timeIsoStarted + TRACK_LEN_MILLIS) {
                 thisDevice.stop()
-                testImage.x = CURSOR_END
+                cursorWrapper.x = CURSOR_END
                 if (currentlyHit) {
                     onActivRelease(timeIsoStarted + TRACK_LEN_MILLIS, 0)
                 }
@@ -281,8 +327,8 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
                         }
                     }
                 }
-                testImage.x =
-                    CURSOR_START + (CURSOR_END - CURSOR_START) * (time - timeIsoStarted).toFloat() / TRACK_LEN_MILLIS.toFloat()
+                cursorWrapper.x = cursorPosition(time)
+                cursorWrapper.y = 0.0f
             }
         }
     }
