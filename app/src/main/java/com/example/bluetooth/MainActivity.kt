@@ -12,7 +12,6 @@ import android.os.CountDownTimer
 import a5.com.a5bluetoothlibrary.A5DeviceManager
 import a5.com.a5bluetoothlibrary.A5BluetoothCallback
 import a5.com.a5bluetoothlibrary.A5Device
-import android.content.res.Resources
 import android.graphics.Color
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
@@ -26,8 +25,6 @@ import java.io.File
 import java.io.FileOutputStream
 import java.util.*
 import kotlin.collections.ArrayList
-import kotlin.math.roundToInt
-import kotlin.math.roundToLong
 
 private const val TAG = "ACTIVBEATS"
 private const val BUFFER = 100
@@ -214,7 +211,7 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
 
         var buffer = DoubleArray(BUFFER)
 
-        var frameCounter = 0
+        var frameCounter: Long = 0
 
         // Loop until all frames written
         while (frameCounter < outputFile.numFrames) {
@@ -229,7 +226,7 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
 
                 //Add in each sample
                 for (sample in samples){
-                    dat += sample.getValueAtTime(frameCounter.toDouble() / outputFile.numFrames.toDouble() * TRACK_LEN)
+                    dat += sample.getClipAtFrame(frameCounter)
                 }
 
 //                Log.v(TAG, "dat: $dat")
