@@ -146,10 +146,6 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
             device?.disconnect()
         }
 
-        startIsometricButton.setOnClickListener {
-            device?.startIsometric()
-        }
-
         scanDevices.setOnClickListener {
             for (device in connectedDevices) {
                 device?.disconnect()
@@ -175,7 +171,6 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
             recyclerView.visibility = View.INVISIBLE
             connectButton.visibility = View.INVISIBLE
             disconnectButton.visibility = View.INVISIBLE
-            startIsometricButton.visibility = View.INVISIBLE
             scanDevices.visibility = View.INVISIBLE
             goButton.visibility = View.INVISIBLE
             tracksContainer.visibility = View.VISIBLE
@@ -191,11 +186,49 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
             currentbeat.visibility = View.VISIBLE
             beattype.visibility = View.VISIBLE
             shareButton.visibility = View.VISIBLE
+            backButton.visibility = View.VISIBLE
+            for (lineArr in lines){
+                for (line in lineArr){
+                    line.visibility = View.VISIBLE
+                }
+            }
+
             cursorWrapper.bringToFront()
             testImage.bringToFront()
             switchedScreen = true
             cursorWrapper.x = CURSOR_START
             cursorWrapper.y = 0.0f
+        }
+
+        backButton.setOnClickListener {
+            textView.visibility = View.VISIBLE
+            recyclerView.visibility = View.VISIBLE
+            connectButton.visibility = View.VISIBLE
+            disconnectButton.visibility = View.VISIBLE
+            scanDevices.visibility = View.VISIBLE
+            goButton.visibility = View.VISIBLE
+
+            tracksContainer.visibility = View.INVISIBLE
+            cursorWrapper.visibility = View.INVISIBLE
+            testImage.visibility = View.INVISIBLE
+            otrTrack.visibility = View.INVISIBLE
+            emptyTrack1.visibility = View.INVISIBLE
+            emptyTrack2.visibility = View.INVISIBLE
+            emptyTrack3.visibility = View.INVISIBLE
+            emptyTrack4.visibility = View.INVISIBLE
+            startCursor.visibility = View.INVISIBLE
+            exportButton.visibility = View.INVISIBLE
+            currentbeat.visibility = View.INVISIBLE
+            beattype.visibility = View.INVISIBLE
+            shareButton.visibility = View.INVISIBLE
+            backButton.visibility = View.INVISIBLE
+            for (lineArr in lines){
+                for (line in lineArr){
+                    line.visibility = View.INVISIBLE
+                }
+            }
+
+            switchedScreen = false
         }
 
         startCursor.setOnClickListener {
@@ -290,16 +323,6 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
     private fun onActivRelease(time: Long, value: Int){
         currentlyHit = false
         samples[instrument.index].add(factories[instrument.index].getSample(hitMax /*- MAX_STRENGTH/4*/, time - hitStart, hitStart - timeIsoStarted))
-    }
-
-    @Synchronized
-    private fun print(name: String, value: Int) {
-        runOnUiThread {
-            pressureChangedTextView1.text =
-                String.format(
-                    Locale.US, "%s: %d", name, value
-                )
-        }
     }
 
     private fun cursorPosition(time: Long) : Float {
