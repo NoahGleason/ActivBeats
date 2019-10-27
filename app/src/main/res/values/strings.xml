@@ -26,4 +26,9 @@
     <string name="go">Go</string>
     <string name="sisy_s_amazing_song_uwu">Sisy\'s Amazing Song UwU</string>
 
+    <string name="highhat">Hi Hat</string>
+    <string name="snare">Snare Drum</string>
+    <string name="kick">Kick</string>
+    <string name="tomtom">Tom Tom</string>
+
 </resources>

@@ -191,28 +191,28 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         emptyTrack1.setOnClickListener {
             if (System.currentTimeMillis() > timeIsoStarted + TRACK_LEN_MILLIS) {
                 show_popup(R.layout.popup_1)
-                beattype.setText("Hi Hat")
+                beattype.text = resources.getString(R.string.highhat)
                 instrument = Instrument.HighHat
             }
         }
         emptyTrack2.setOnClickListener {
             if (System.currentTimeMillis() > timeIsoStarted + TRACK_LEN_MILLIS) {
                 show_popup(R.layout.popup_2)
-                beattype.setText("Snare Drum")
+                beattype.text = resources.getString(R.string.snare)
                 instrument = Instrument.Snare
             }
         }
         emptyTrack3.setOnClickListener {
             if (System.currentTimeMillis() > timeIsoStarted + TRACK_LEN_MILLIS) {
                 show_popup(R.layout.popup_3)
-                beattype.setText("Kick")
+                beattype.text = resources.getString(R.string.kick)
                 instrument = Instrument.Kick
             }
         }
         emptyTrack4.setOnClickListener {
             if (System.currentTimeMillis() > timeIsoStarted + TRACK_LEN_MILLIS) {
                 show_popup(R.layout.popup_4)
-                beattype.setText("Tom Tom")
+                beattype.text = resources.getString(R.string.tomtom)
                 instrument = Instrument.TomTom
             }
         }
