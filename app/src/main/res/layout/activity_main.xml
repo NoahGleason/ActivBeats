@@ -8,80 +8,85 @@
         tools:context=".MainActivity"
         android:id="@+id/root_layout">
 
-    <TextView
-        android:id="@+id/textView"
-        android:layout_width="173dp"
-        android:layout_height="18dp"
-        android:layout_alignBottom="@+id/recyclerView"
-        android:layout_alignParentStart="true"
+    <ImageView
+        android:layout_width="400px"
+        android:layout_height="400px"
+        android:src="@drawable/logo"
         android:layout_alignParentTop="true"
-        android:layout_alignParentEnd="true"
-        android:layout_marginStart="328dp"
-        android:layout_marginTop="30dp"
-        android:layout_marginEnd="345dp"
-        android:layout_marginBottom="52dp"
-        android:text="@string/sisy_s_amazing_song_uwu" />
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="200px"
+        android:id="@+id/logo">
+    </ImageView>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/logo"
+        android:orientation="horizontal"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="100px">
+
+        <Button
+            android:id="@+id/scanDevices"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_marginStart="0dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="0dp"
+            android:layout_toEndOf="@+id/recyclerView"
+            android:background="#33b5e5"
+            android:padding="8dp"
+            android:text="@string/scan_devices"
+            android:textColor="@android:color/white" />
+
+        <Button
+            android:id="@+id/connectButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_marginStart="0dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="0dp"
+            android:layout_toEndOf="@+id/scanDevices"
+            android:background="#ffbb33"
+            android:padding="8dp"
+            android:text="@string/connect"
+            android:textColor="@android:color/white" />
+
+        <Button
+            android:id="@+id/startIsometricButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_marginStart="0dp"
+            android:layout_marginBottom="0dp"
+            android:layout_toEndOf="@+id/connectButton"
+            android:background="#aa66cc"
+            android:padding="8dp"
+            android:text="@string/start_isometric"
+            android:textColor="@android:color/white" />
+
+        <Button
+            android:id="@+id/goButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="0dp"
+            android:layout_toEndOf="@+id/startIsometricButton"
+            android:background="#00C851"
+            android:padding="8dp"
+            android:text="@string/go"
+            android:textColor="@android:color/white" />
+    </LinearLayout>
 
     <android.support.v7.widget.RecyclerView
-            android:layout_width="match_parent"
-            android:id="@+id/recyclerView"
-            android:layout_height="100dp"/>
-
-    <Button
-        android:id="@+id/connectButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_marginStart="0dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginBottom="0dp"
-        android:layout_toEndOf="@+id/scanDevices"
-        android:background="@color/colorPrimary"
-        android:padding="8dp"
-        android:text="@string/connect"
-        android:textColor="@android:color/white" />
-
-    <Button
-        android:id="@+id/disconnectButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_marginStart="0dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginBottom="0dp"
-        android:layout_toEndOf="@+id/connectButton"
-        android:background="@color/colorAccent"
-        android:padding="8dp"
-        android:text="@string/disconnect"
-        android:textColor="@android:color/white" />
-
-    <Button
-        android:id="@+id/scanDevices"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentBottom="true"
-        android:layout_marginStart="0dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginBottom="0dp"
-        android:background="@color/colorPrimaryDark"
-        android:padding="8dp"
-        android:text="@string/scan_devices"
-        android:textColor="@android:color/white" />
-
-    <Button
-        android:id="@+id/goButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginBottom="0dp"
-        android:layout_toEndOf="@+id/disconnectButton"
-        android:background="@color/colorPrimaryDark"
-        android:padding="8dp"
-        android:text="@string/go"
-        android:textColor="@android:color/white" />
+        android:id="@+id/recyclerView"
+        android:layout_width="116dp"
+        android:layout_height="97dp"
+        android:layout_alignParentBottom="true" />
 
     <ScrollView
         android:layout_width="match_parent"
@@ -124,19 +129,20 @@
                         android:layout_margin="8dp"
                         android:text="Song"></TextView>
                 </RelativeLayout>
+
                 <ImageButton
                     android:id="@+id/otrTrack"
                     android:layout_width="fill_parent"
                     android:layout_height="match_parent"
                     android:layout_margin="0dp"
+                    android:background="#33b5e5"
+                    android:paddingStart="0dp"
+                    android:paddingTop="0dp"
+                    android:paddingEnd="0dp"
+                    android:paddingBottom="1dp"
                     android:scaleType="fitXY"
                     android:src="@drawable/oldtownroad"
-                    android:visibility="invisible"
-                    android:background="#000000"
-                    android:paddingBottom="1dp"
-                    android:paddingStart="0dp"
-                    android:paddingEnd="0dp"
-                    android:paddingTop="0dp"></ImageButton>
+                    android:visibility="invisible"></ImageButton>
             </LinearLayout>
 
             <LinearLayout
@@ -225,14 +231,14 @@
                     android:layout_width="fill_parent"
                     android:layout_height="118dp"
                     android:layout_margin="0dp"
+                    android:background="#000000"
+                    android:paddingStart="0dp"
+                    android:paddingTop="0dp"
+                    android:paddingEnd="0dp"
+                    android:paddingBottom="1dp"
                     android:scaleType="fitXY"
                     android:src="@drawable/empty"
-                    android:visibility="invisible"
-                    android:background="#000000"
-                    android:paddingBottom="1dp"
-                    android:paddingStart="0dp"
-                    android:paddingEnd="0dp"
-                    android:paddingTop="0dp"></ImageButton>
+                    android:visibility="invisible"></ImageButton>
             </LinearLayout>
 
             <LinearLayout
