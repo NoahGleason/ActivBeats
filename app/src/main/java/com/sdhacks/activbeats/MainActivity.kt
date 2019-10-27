@@ -138,7 +138,7 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         }
 
         startIsometricButton.setOnClickListener {
-            onRecordPressed()
+            device?.startIsometric()
         }
 
         scanDevices.setOnClickListener {
