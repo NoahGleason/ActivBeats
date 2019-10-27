@@ -107,7 +107,8 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        testImage.x = CURSOR_START
+        cursorWrapper.x = CURSOR_START
+        cursorWrapper.y = 0.0f
 
         otrPlayer = MediaPlayer.create(this, R.raw.otr)
 
@@ -160,6 +161,7 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
             scanDevices.visibility = View.INVISIBLE
             goButton.visibility = View.INVISIBLE
             tracksContainer.visibility = View.VISIBLE
+            cursorWrapper.visibility = View.VISIBLE
             testImage.visibility = View.VISIBLE
             otrTrack.visibility = View.VISIBLE
             emptyTrack1.visibility = View.VISIBLE
@@ -167,19 +169,16 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
             emptyTrack3.visibility = View.VISIBLE
             emptyTrack4.visibility = View.VISIBLE
             startCursor.visibility = View.VISIBLE
-            resetCursor.visibility = View.VISIBLE
+            exportButton.visibility = View.VISIBLE
             currentbeat.visibility = View.VISIBLE
             beattype.visibility = View.VISIBLE
+            testMark.bringToFront()
+            cursorWrapper.bringToFront()
             testImage.bringToFront()
         }
 
         startCursor.setOnClickListener {
             onRecordPressed()
-        }
-
-        resetCursor.setOnClickListener {
-            testImage.x = CURSOR_START
-            otrPlayer?.stop()
         }
 
         emptyTrack1.setOnClickListener {
@@ -239,7 +238,8 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         val time = System.currentTimeMillis()
         if (time > timeIsoStarted + TRACK_LEN_MILLIS) {
             thisDevice.stop()
-            testImage.x = CURSOR_END
+            cursorWrapper.x = CURSOR_END
+            cursorWrapper.y = 0.0f
             if (currentlyHit) {
                 onActivRelease(timeIsoStarted + TRACK_LEN_MILLIS, 0)
             }
@@ -250,8 +250,11 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
                     players[sample.instrument.index].start()
                 }
             }
-            testImage.x =
+            testMark.x = 500.0f
+            testMark.y = 592.0f
+            cursorWrapper.x =
                 CURSOR_START + (CURSOR_END - CURSOR_START) * (time - timeIsoStarted).toFloat() / TRACK_LEN_MILLIS.toFloat()
+            cursorWrapper.y = 0.0f
             print(thisDevice.device.name, thisValue)
             if (currentlyHit) {
                 if (thisValue < MAX_STRENGTH / 4) {
