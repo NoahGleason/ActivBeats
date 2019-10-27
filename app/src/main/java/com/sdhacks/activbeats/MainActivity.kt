@@ -33,6 +33,7 @@ import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File
 import java.io.FileOutputStream
 import java.util.*
+import kotlin.collections.ArrayList
 
 
 private const val TAG = "ACTIVBEATS"
@@ -63,9 +64,10 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
     private var currentlyHit = false
     private var hitStart: Long = 0
     private var hitMax = 0
-    private var samples = arrayListOf<Sample>()
+    private var samples = arrayOf(arrayListOf(), arrayListOf(), arrayListOf(), arrayListOf<Sample>())
     private var instrument = Instrument.Snare
     private var otrPlayer: MediaPlayer? = null
+    private var switchedScreen = false
 
 
     private lateinit var deviceAdapter: DeviceAdapter
@@ -173,6 +175,7 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
             currentbeat.visibility = View.VISIBLE
             beattype.visibility = View.VISIBLE
             testImage.bringToFront()
+            switchedScreen = true
         }
 
         startCursor.setOnClickListener {
@@ -210,6 +213,7 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         currentlyHit = false
         otrPlayer?.seekTo(0)
         otrPlayer?.start()
+        samples[instrument.index] = ArrayList()
         timeIsoStarted = System.currentTimeMillis()
         device?.startIsometric()
     }
@@ -224,7 +228,7 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
 
     private fun onActivRelease(time: Long, value: Int){
         currentlyHit = false
-        samples.add(factories[instrument.index].getSample(hitMax /*- MAX_STRENGTH/4*/, time - hitStart, hitStart - timeIsoStarted))
+        samples[instrument.index].add(factories[instrument.index].getSample(hitMax /*- MAX_STRENGTH/4*/, time - hitStart, hitStart - timeIsoStarted))
     }
 
     @Synchronized
@@ -239,30 +243,37 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
 
     private fun manageReceiveIsometric(thisDevice: A5Device, thisValue: Int) {
         val time = System.currentTimeMillis()
-        if (time > timeIsoStarted + TRACK_LEN_MILLIS) {
-            thisDevice.stop()
-            testImage.x = CURSOR_END
-            if (currentlyHit) {
-                onActivRelease(timeIsoStarted + TRACK_LEN_MILLIS, 0)
-            }
-        } else {
-            for (sample in samples) {
-                if (sample.instrument != instrument && sample.start * 1000 > (time - timeIsoStarted) && sample.start * 1000 < (time - timeIsoStarted) + APPROX_PERIOD) {
-                    players[sample.instrument.index].seekTo(0)
-                    players[sample.instrument.index].start()
+        print(thisDevice.device.name, thisValue)
+        if (switchedScreen) {
+            if (time > timeIsoStarted + TRACK_LEN_MILLIS) {
+                thisDevice.stop()
+                testImage.x = CURSOR_END
+                if (currentlyHit) {
+                    onActivRelease(timeIsoStarted + TRACK_LEN_MILLIS, 0)
                 }
-            }
-            testImage.x =
-                CURSOR_START + (CURSOR_END - CURSOR_START) * (time - timeIsoStarted).toFloat() / TRACK_LEN_MILLIS.toFloat()
-            print(thisDevice.device.name, thisValue)
-            if (currentlyHit) {
-                if (thisValue < MAX_STRENGTH / 4) {
-                    onActivRelease(time, thisValue)
-                } else {
-                    hitMax = kotlin.math.max(hitMax, thisValue)
+            } else {
+                if (currentlyHit) {
+                    if (thisValue < MAX_STRENGTH / 4) {
+                        onActivRelease(time, thisValue)
+                    } else {
+                        hitMax = kotlin.math.max(hitMax, thisValue)
+                    }
+                } else if (thisValue >= MAX_STRENGTH / 4) {
+                    onActivPress(time, thisValue)
                 }
-            } else if (thisValue >= MAX_STRENGTH / 4) {
-                onActivPress(time, thisValue)
+
+                for (otherInstrument in arrayOf(Instrument.Snare, Instrument.Kick, Instrument.HighHat, Instrument.TomTom)) {
+                    if (otherInstrument != instrument) {
+                        for (sample in samples[otherInstrument.index]) {
+                            if (sample.start * 1000 > (time - timeIsoStarted) && sample.start * 1000 < (time - timeIsoStarted) + APPROX_PERIOD) {
+                                players[sample.instrument.index].seekTo(0)
+                                players[sample.instrument.index].start()
+                            }
+                        }
+                    }
+                }
+                testImage.x =
+                    CURSOR_START + (CURSOR_END - CURSOR_START) * (time - timeIsoStarted).toFloat() / TRACK_LEN_MILLIS.toFloat()
             }
         }
     }
@@ -271,9 +282,11 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         Log.v(TAG, "export started")
 
         var max = 1
-        for (sample in samples){
-            max = kotlin.math.max(max, sample.peak)
-            Log.v(TAG, "$sample")
+        for (sampleByInst in samples){
+            for (sample in sampleByInst) {
+                max = kotlin.math.max(max, sample.peak)
+                Log.v(TAG, "$sample")
+            }
         }
 
         val otrData = WavFile.getRaw(WavFile.openWavFile(resources.openRawResource(R.raw.otr)), 0)
@@ -299,8 +312,10 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
                 var dat = 0.0
 
                 //Add in each sample
-                for (sample in samples){
-                    dat += sample.getClipAtFrame(frameCounter)
+                for (sampleByInst in samples){
+                    for (sample in sampleByInst) {
+                        dat += sample.getClipAtFrame(frameCounter)
+                    }
                 }
                 dat += otrData[frameCounter.toInt()]
 
