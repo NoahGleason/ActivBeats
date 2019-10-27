@@ -5,7 +5,8 @@
     xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context=".MainActivity">
+        tools:context=".MainActivity"
+        android:id="@+id/root_layout">
 
     <TextView
         android:id="@+id/textView"
@@ -27,14 +28,14 @@
             android:layout_height="100dp"/>
 
     <TextView
-            android:background="@color/colorPrimary"
-            android:id="@+id/pressureChangedTextView1"
-            android:layout_margin="8dp"
-            android:padding="8dp"
-            android:layout_below="@id/recyclerView"
-            android:textColor="@android:color/white"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+        android:id="@+id/pressureChangedTextView1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@color/colorPrimary"
+        android:padding="8dp"
+        android:textColor="@android:color/white"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true"/>
 
     <TextView
             android:background="@color/colorPrimary"
@@ -45,7 +46,8 @@
             android:padding="8dp"
             android:layout_width="wrap_content"
             android:layout_below="@id/recyclerView"
-            android:layout_height="wrap_content"/>
+            android:layout_height="wrap_content"
+            android:visibility="invisible"/>
 
     <Button
         android:id="@+id/connectButton"
@@ -102,12 +104,247 @@
         android:text="@string/scan_devices"
         android:textColor="@android:color/white" />
 
-    <ImageView
-        android:id="@+id/testImage"
-        android:layout_width="81dp"
-        android:layout_height="162dp"
-        android:layout_below="@+id/recyclerView"
-        android:layout_marginTop="70dp"
-        tools:srcCompat="@tools:sample/backgrounds/scenic" />
+    <Button
+        android:id="@+id/goButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="0dp"
+        android:layout_toEndOf="@+id/startIsometricButton"
+        android:background="@color/colorPrimaryDark"
+        android:padding="8dp"
+        android:text="Go"
+        android:textColor="@android:color/white" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="350dp"
+        android:visibility="invisible"
+        android:id="@+id/tracksContainer">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" >
+
+            <ImageView
+                android:id="@+id/testImage"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:padding="0dp"
+                android:layout_marginTop="-590dp"
+                android:src="@drawable/newredline"
+                android:adjustViewBounds="true"
+                android:visibility="invisible"></ImageView>
+            
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="118dp"
+                android:orientation="horizontal">
+
+                <RelativeLayout
+                    android:layout_width="300px"
+                    android:layout_height="match_parent">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_margin="8dp"
+                        android:text="Song"></TextView>
+                </RelativeLayout>
+                <ImageButton
+                    android:id="@+id/otrTrack"
+                    android:layout_width="fill_parent"
+                    android:layout_height="match_parent"
+                    android:layout_margin="0dp"
+                    android:scaleType="fitXY"
+                    android:src="@drawable/oldtownroad"
+                    android:visibility="invisible"
+                    android:background="#000000"
+                    android:paddingBottom="1dp"
+                    android:paddingStart="0dp"
+                    android:paddingEnd="0dp"
+                    android:paddingTop="0dp"></ImageButton>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="118dp"
+                android:orientation="horizontal">
+
+                <RelativeLayout
+                    android:layout_width="300px"
+                    android:layout_height="match_parent">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_margin="8dp"
+                        android:text="Hi Hat"></TextView>
+                </RelativeLayout>
+
+                <ImageButton
+                    android:id="@+id/emptyTrack1"
+                    android:layout_width="fill_parent"
+                    android:layout_height="118dp"
+                    android:layout_margin="0dp"
+                    android:scaleType="fitXY"
+                    android:src="@drawable/empty"
+                    android:visibility="invisible"
+                    android:background="#000000"
+                    android:paddingBottom="1dp"
+                    android:paddingStart="0dp"
+                    android:paddingEnd="0dp"
+                    android:paddingTop="0dp"></ImageButton>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="118dp"
+                android:orientation="horizontal">
+
+                <RelativeLayout
+                    android:layout_width="300px"
+                    android:layout_height="match_parent">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_margin="8dp"
+                        android:text="Snare Drum"></TextView>
+                </RelativeLayout>
+
+                <ImageButton
+                    android:id="@+id/emptyTrack2"
+                    android:layout_width="fill_parent"
+                    android:layout_height="118dp"
+                    android:layout_margin="0dp"
+                    android:scaleType="fitXY"
+                    android:src="@drawable/empty"
+                    android:visibility="invisible"
+                    android:background="#000000"
+                    android:paddingBottom="1dp"
+                    android:paddingStart="0dp"
+                    android:paddingEnd="0dp"
+                    android:paddingTop="0dp"></ImageButton>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="118dp"
+                android:orientation="horizontal">
+
+                <RelativeLayout
+                    android:layout_width="300px"
+                    android:layout_height="match_parent">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_margin="8dp"
+                        android:text="Kick"></TextView>
+                </RelativeLayout>
+
+                <ImageButton
+                    android:id="@+id/emptyTrack3"
+                    android:layout_width="fill_parent"
+                    android:layout_height="118dp"
+                    android:layout_margin="0dp"
+                    android:scaleType="fitXY"
+                    android:src="@drawable/empty"
+                    android:visibility="invisible"
+                    android:background="#000000"
+                    android:paddingBottom="1dp"
+                    android:paddingStart="0dp"
+                    android:paddingEnd="0dp"
+                    android:paddingTop="0dp"></ImageButton>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="118dp"
+                android:orientation="horizontal">
+
+                <RelativeLayout
+                    android:layout_width="300px"
+                    android:layout_height="match_parent">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_margin="8dp"
+                        android:text="Tom Tom"></TextView>
+                </RelativeLayout>
+
+                <ImageButton
+                    android:id="@+id/emptyTrack4"
+                    android:layout_width="fill_parent"
+                    android:layout_height="118dp"
+                    android:layout_margin="0dp"
+                    android:scaleType="fitXY"
+                    android:src="@drawable/empty"
+                    android:visibility="invisible"
+                    android:background="#000000"
+                    android:paddingBottom="1dp"
+                    android:paddingStart="0dp"
+                    android:paddingEnd="0dp"
+                    android:paddingTop="0dp"></ImageButton>
+            </LinearLayout>
+
+
+        </LinearLayout>
+    </ScrollView>
+
+    <Button
+        android:id="@+id/startCursor"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentStart="true"
+        android:layout_marginBottom="0dp"
+        android:background="@color/colorPrimaryDark"
+        android:padding="8dp"
+        android:text="Play Music"
+        android:textColor="@android:color/white"
+        android:visibility="invisible"/>
+
+    <Button
+        android:id="@+id/resetCursor"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="0dp"
+        android:background="@color/colorPrimaryDark"
+        android:padding="8dp"
+        android:layout_marginStart="8dp"
+        android:text="Reset"
+        android:textColor="@android:color/white"
+        android:visibility="invisible"
+        android:layout_toRightOf="@id/startCursor"/>
+
+    <TextView
+        android:id="@+id/currentbeat"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        android:text="Current Beat:"
+        android:textSize="20sp"
+        android:visibility="invisible"
+        android:layout_toRightOf="@+id/resetCursor"
+        android:layout_alignParentBottom="true"/>
+
+    <TextView
+        android:id="@+id/beattype"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        android:text="Kick"
+        android:textSize="20sp"
+        android:visibility="invisible"
+        android:layout_toRightOf="@+id/currentbeat"
+        android:layout_alignParentBottom="true"/>
+
 
 </RelativeLayout>
