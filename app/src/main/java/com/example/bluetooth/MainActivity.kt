@@ -17,9 +17,17 @@ import android.support.v4.content.ContextCompat
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
 import android.util.Log
+import android.widget.ImageView
 import android.widget.Toast
 import kotlinx.android.synthetic.main.activity_main.*
 import java.util.*
+import android.support.v4.app.SupportActivity
+import android.support.v4.app.SupportActivity.ExtraData
+import android.support.v4.content.ContextCompat.getSystemService
+import android.icu.lang.UCharacter.GraphemeClusterBreak.T
+import android.util.DisplayMetrics
+import android.view.View
+
 
 private const val TAG = "ACTIVBEATS"
 private const val SONG_TIME_MILLIS: Long = 60 * 1000
@@ -33,6 +41,8 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
     private var counter: Int = 0
     private var countDownTimer: CountDownTimer? = null
     private var timeIsoStarted: Long = 0
+    private var songStarted: Boolean = false
+    private var cursorX: Double = 0.0
 
     private lateinit var deviceAdapter: DeviceAdapter
 
@@ -88,25 +98,11 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
             device?.disconnect()
         }
 
-        sendStopCommandButton.setOnClickListener {
-            device?.stop()
-            startTimer()
-        }
-
-        abortStopCommandButton.setOnClickListener {
-            device?.startIsometric()
-            stopTimer()
-        }
-
         startIsometricButton.setOnClickListener {
             readings.clear()
             times.clear()
             timeIsoStarted = System.currentTimeMillis()
             device?.startIsometric()
-        }
-
-        tareButton.setOnClickListener {
-            device?.tare()
         }
 
         scanDevices.setOnClickListener {
@@ -119,6 +115,29 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
             deviceAdapter.clearDevices()
 
             A5DeviceManager.scanForDevices()
+        }
+
+        goButton.setOnClickListener {
+            textView.visibility = View.INVISIBLE
+            recyclerView.visibility = View.INVISIBLE
+            connectButton.visibility = View.INVISIBLE
+            disconnectButton.visibility = View.INVISIBLE
+            startIsometricButton.visibility = View.INVISIBLE
+            scanDevices.visibility = View.INVISIBLE
+            goButton.visibility = View.INVISIBLE
+            tracksContainer.visibility = View.VISIBLE
+            testImage.visibility = View.VISIBLE
+            otrTrack.visibility = View.VISIBLE
+            emptyTrack1.visibility = View.VISIBLE
+            emptyTrack2.visibility = View.VISIBLE
+            emptyTrack3.visibility = View.VISIBLE
+            emptyTrack4.visibility = View.VISIBLE
+            startCursor.visibility = View.VISIBLE
+            testImage.bringToFront()
+        }
+
+        startCursor.setOnClickListener {
+            songStarted = true
         }
     }
 
@@ -144,6 +163,7 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
 
     private fun manageReceiveIsometric(thisDevice: A5Device, thisValue: Int) {
         val time = System.currentTimeMillis()
+        //var testImage: ImageView = findViewById(R.id.testImage)
         if (time > timeIsoStarted + SONG_TIME_MILLIS){
             thisDevice.stop()
         } else {
@@ -151,7 +171,21 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
             readings.add(thisValue)
             times.add(time)
             Log.v(TAG, "$time, $thisValue")
+            //xCoord+=10.0
+            //testImage.x = xCoord.toFloat()
         }
+
+        if (songStarted) {
+            startCursor()
+        }
+    }
+
+    fun startCursor() {
+        if(cursorX >= 2000) {
+            songStarted = false
+        }
+        cursorX += 10.0
+        testImage.x = cursorX.toFloat()
     }
 
     fun deviceSelected(device: A5Device) {
