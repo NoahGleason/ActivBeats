@@ -12,4 +12,18 @@
 
     <string name="disconnected">Disconnected</string>
 
+    <string name="title_activity_app">AppActivity</string>
+    <string name="dummy_button">Dummy Button</string>
+    <string name="dummy_content">DUMMY\nCONTENT</string>
+    <string name="popup1">Beat: High Hat\nExercise: Standing Chest Press</string>
+    <string name="popup2">Beat: Snare Drum\nExercise Shoulder Press</string>
+    <string name="popup3">Beat: Kick\nExercise Squat Crush</string>
+    <string name="popup4">Beat: Tom Tom\nExercise Lunge Crush</string>
+    <string name="start_beat">Snare</string>
+    <string name="current_beat">Current Beat:</string>
+    <string name="reset">Reset</string>
+    <string name="play_music">Play Music</string>
+    <string name="go">Go</string>
+    <string name="sisy_s_amazing_song_uwu">Sisy\'s Amazing Song UwU</string>
+
 </resources>

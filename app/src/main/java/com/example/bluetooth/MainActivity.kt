@@ -1,5 +1,8 @@
 package com.example.bluetooth
 
+import a5.com.a5bluetoothlibrary.A5BluetoothCallback
+import a5.com.a5bluetoothlibrary.A5Device
+import a5.com.a5bluetoothlibrary.A5DeviceManager
 import android.Manifest
 import android.app.Activity
 import android.bluetooth.BluetoothAdapter
@@ -7,26 +10,29 @@ import android.bluetooth.BluetoothManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.os.Bundle
-import android.os.CountDownTimer
-import a5.com.a5bluetoothlibrary.A5DeviceManager
-import a5.com.a5bluetoothlibrary.A5BluetoothCallback
-import a5.com.a5bluetoothlibrary.A5Device
 import android.graphics.Color
 import android.media.MediaPlayer
 import android.net.Uri
+import android.os.Build
+import android.os.Bundle
+import android.os.CountDownTimer
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
+import android.transition.Slide
+import android.transition.TransitionManager
 import android.util.Log
-import android.widget.Toast
+import android.view.Gravity
+import android.view.LayoutInflater
+import android.view.View
+import android.widget.*
 import com.example.bluetooth.wav.WavFile
 import kotlinx.android.synthetic.main.activity_main.*
 import java.io.File
 import java.io.FileOutputStream
 import java.util.*
-import kotlin.collections.ArrayList
+
 
 private const val TAG = "ACTIVBEATS"
 private const val BUFFER = 100
@@ -34,6 +40,9 @@ private const val TRACK_LEN = 10.0
 private const val TRACK_LEN_MILLIS : Long = (TRACK_LEN * 1000).toLong()
 private const val MAX_STRENGTH = 150
 private const val APPROX_PERIOD = 100
+
+private const val CURSOR_START = 300.0.toFloat()
+private const val CURSOR_END = 2035.0.toFloat()
 
 class MainActivity : AppCompatActivity(), A5BluetoothCallback {
 
@@ -54,6 +63,7 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
     private var samples = arrayListOf<Sample>()
     private var instrument = Instrument.Snare
     private var otrPlayer: MediaPlayer? = null
+
 
     private lateinit var deviceAdapter: DeviceAdapter
 
@@ -91,9 +101,12 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         const val MY_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION = 998
     }
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        testImage.x = CURSOR_START
 
         otrPlayer = MediaPlayer.create(this, R.raw.otr)
 
@@ -121,27 +134,10 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
             device?.disconnect()
         }
 
-        sendStopCommandButton.setOnClickListener {
-            device?.stop()
-            samples.clear()
-            otrPlayer?.stop()
-            startTimer()
-        }
-
-        abortStopCommandButton.setOnClickListener {
-            device?.startIsometric()
-            stopTimer()
-        }
-
         startIsometricButton.setOnClickListener {
             onRecordPressed()
-            device?.startIsometric()
         }
-
-        tareButton.setOnClickListener {
-            export("sampled.wav")
-        }
-
+        
         scanDevices.setOnClickListener {
             for (device in connectedDevices) {
                 device?.disconnect()
@@ -153,23 +149,69 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
 
             A5DeviceManager.scanForDevices()
         }
+
+        goButton.setOnClickListener {
+            textView.visibility = View.INVISIBLE
+            recyclerView.visibility = View.INVISIBLE
+            connectButton.visibility = View.INVISIBLE
+            disconnectButton.visibility = View.INVISIBLE
+            startIsometricButton.visibility = View.INVISIBLE
+            scanDevices.visibility = View.INVISIBLE
+            goButton.visibility = View.INVISIBLE
+            tracksContainer.visibility = View.VISIBLE
+            testImage.visibility = View.VISIBLE
+            otrTrack.visibility = View.VISIBLE
+            emptyTrack1.visibility = View.VISIBLE
+            emptyTrack2.visibility = View.VISIBLE
+            emptyTrack3.visibility = View.VISIBLE
+            emptyTrack4.visibility = View.VISIBLE
+            startCursor.visibility = View.VISIBLE
+            resetCursor.visibility = View.VISIBLE
+            currentbeat.visibility = View.VISIBLE
+            beattype.visibility = View.VISIBLE
+            testImage.bringToFront()
+        }
+
+        startCursor.setOnClickListener {
+            onRecordPressed()
+        }
+
+        resetCursor.setOnClickListener {
+            testImage.x = CURSOR_START
+            otrPlayer?.stop()
+        }
+
+        emptyTrack1.setOnClickListener {
+            show_popup(R.layout.popup_1)
+            beattype.setText("Hi Hat")
+            instrument = Instrument.HighHat
+        }
+        emptyTrack2.setOnClickListener {
+            show_popup(R.layout.popup_2)
+            beattype.setText("Snare Drum")
+            instrument = Instrument.Snare
+        }
+        emptyTrack3.setOnClickListener {
+            show_popup(R.layout.popup_3)
+            beattype.setText("Kick")
+            instrument = Instrument.Kick
+        }
+        emptyTrack4.setOnClickListener {
+            show_popup(R.layout.popup_4)
+            beattype.setText("Tom Tom")
+            instrument = Instrument.TomTom
+        }
     }
 
     private fun onRecordPressed() {
         currentlyHit = false
         otrPlayer?.seekTo(0)
         otrPlayer?.start()
-        when (trackIndex.text.toString().toInt()){
-            0 -> instrument = Instrument.Snare
-            1 -> instrument = Instrument.Kick
-            2 -> instrument = Instrument.HighHat
-            3 -> instrument = Instrument.TomTom
-        }
         timeIsoStarted = System.currentTimeMillis()
+        device?.startIsometric()
     }
 
     private fun onActivPress(time: Long, value: Int){
-        indicatorBox.setBackgroundColor(Color.GREEN)
         players[instrument.index].seekTo(0)
         players[instrument.index].start()
         currentlyHit = true
@@ -178,7 +220,6 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
     }
 
     private fun onActivRelease(time: Long, value: Int){
-        indicatorBox.setBackgroundColor(Color.RED)
         currentlyHit = false
         samples.add(factories[instrument.index].getSample(hitMax /*- MAX_STRENGTH/4*/, time - hitStart, hitStart - timeIsoStarted))
     }
@@ -197,10 +238,10 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         val time = System.currentTimeMillis()
         if (time > timeIsoStarted + TRACK_LEN_MILLIS){
             thisDevice.stop()
+            testImage.x = CURSOR_END
             if (currentlyHit) {
                 onActivRelease(timeIsoStarted + TRACK_LEN_MILLIS, 0)
             }
-            indicatorBox.setBackgroundColor(Color.GRAY)
         } else {
             for (sample in samples){
                 if (sample.instrument != instrument && sample.start*1000 > (time-timeIsoStarted) && sample.start*1000 < (time-timeIsoStarted) + APPROX_PERIOD){
@@ -208,6 +249,7 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
                     players[sample.instrument.index].start()
                 }
             }
+            testImage.x = CURSOR_START + (CURSOR_END - CURSOR_START) * (time - timeIsoStarted).toFloat()/ TRACK_LEN_MILLIS.toFloat()
             print(thisDevice.device.name, thisValue)
             if (currentlyHit) {
                 if (thisValue < MAX_STRENGTH / 4){
@@ -291,7 +333,7 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         }
         return toRet
     }
-
+    
     fun deviceSelected(device: A5Device) {
         this.device = device
         Toast.makeText(this, "device selected: " + device.device.name, Toast.LENGTH_SHORT).show()
@@ -408,5 +450,72 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
 
     private fun stopTimer() {
         countDownTimer?.cancel()
+    }
+
+    private fun show_popup(popup: Int){
+
+        // Initialize a new layout inflater instance
+        val inflater:LayoutInflater = getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
+
+        // Inflate a custom view using layout inflater
+        val view = inflater.inflate(popup,null)
+
+        // Initialize a new instance of popup window
+        val popupWindow = PopupWindow(
+            view, // Custom view to show in popup window
+            LinearLayout.LayoutParams.WRAP_CONTENT, // Width of popup window
+            LinearLayout.LayoutParams.WRAP_CONTENT // Window height
+        )
+
+        // Set an elevation for the popup window
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            popupWindow.elevation = 10.0F
+        }
+
+
+        // If API level 23 or higher then execute the code
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
+            // Create a new slide animation for popup window enter transition
+            val slideIn = Slide()
+            slideIn.slideEdge = Gravity.TOP
+            popupWindow.enterTransition = slideIn
+
+            // Slide animation for popup window exit transition
+            val slideOut = Slide()
+            slideOut.slideEdge = Gravity.RIGHT
+            popupWindow.exitTransition = slideOut
+
+        }
+
+        // Get the widgets reference from custom view
+        val tv = view.findViewById<TextView>(R.id.text_view)
+        val buttonPopup = view.findViewById<Button>(R.id.button_popup)
+
+        // Set click listener for popup window's text view
+        tv.setOnClickListener{
+            // Change the text color of popup window's text view
+            tv.setTextColor(Color.RED)
+        }
+
+        // Set a click listener for popup's button widget
+        buttonPopup.setOnClickListener{
+            // Dismiss the popup window
+            popupWindow.dismiss()
+        }
+
+        // Set a dismiss listener for popup window
+        popupWindow.setOnDismissListener {
+            Toast.makeText(applicationContext,"Popup closed",Toast.LENGTH_SHORT).show()
+        }
+
+
+        // Finally, show the popup window on app
+        TransitionManager.beginDelayedTransition(root_layout)
+        popupWindow.showAtLocation(
+            root_layout, // Location to display popup window
+            Gravity.CENTER, // Exact position of layout to display popup
+            0, // X offset
+            0 // Y offset
+        )
     }
 }
