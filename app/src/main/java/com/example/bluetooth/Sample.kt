@@ -1,5 +1,6 @@
 package com.example.bluetooth
 
+import android.util.Log
 import com.example.bluetooth.wav.WavFile
 
 class Sample(
@@ -36,8 +37,13 @@ class Sample(
         if (t < start || t > start + duration){
             return 0.0
         }
-        val index = (t - start) * ratio
+        val index = kotlin.math.min((t - start) * ratio, data.size - 1.0)
         return peak.toDouble() * (data[index.toInt()] + (data[kotlin.math.ceil(index).toInt()] - data[index.toInt()]) * (index - index.toInt()))
     }
+
+    override fun toString(): String {
+        return "Sample(peak=$peak, duration=$duration, start=$start)"
+    }
+
 
 }

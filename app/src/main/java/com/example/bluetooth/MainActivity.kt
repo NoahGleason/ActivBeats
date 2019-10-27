@@ -13,6 +13,7 @@ import a5.com.a5bluetoothlibrary.A5DeviceManager
 import a5.com.a5bluetoothlibrary.A5BluetoothCallback
 import a5.com.a5bluetoothlibrary.A5Device
 import android.content.res.Resources
+import android.graphics.Color
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
 import android.support.v7.app.AppCompatActivity
@@ -125,7 +126,7 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         }
 
         tareButton.setOnClickListener {
-            export("multitrack.wav")
+            export("sampled.wav")
         }
 
         scanDevices.setOnClickListener {
@@ -155,19 +156,22 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         val time = System.currentTimeMillis()
         if (time > timeIsoStarted + TRACK_LEN_MILLIS){
             thisDevice.stop()
+            indicatorBox.setBackgroundColor(Color.GRAY)
             if (currentlyHit) {
-                samples.add(factories[instrument].getSample(hitMax /*- MAX_STRENGTH/4*/, timeIsoStarted + TRACK_LEN_MILLIS - hitStart, hitStart))
+                samples.add(factories[instrument].getSample(hitMax /*- MAX_STRENGTH/4*/, timeIsoStarted + TRACK_LEN_MILLIS - hitStart, hitStart - timeIsoStarted))
             }
         } else {
             print(thisDevice.device.name, thisValue)
             if (currentlyHit) {
                 if (thisValue < MAX_STRENGTH / 4){
+                    indicatorBox.setBackgroundColor(Color.RED)
                     currentlyHit = false
-                    samples.add(factories[instrument].getSample(hitMax /*- MAX_STRENGTH/4*/, time - hitStart, hitStart))
+                    samples.add(factories[instrument].getSample(hitMax /*- MAX_STRENGTH/4*/, time - hitStart, hitStart - timeIsoStarted))
                 } else {
                     hitMax = kotlin.math.max(hitMax, thisValue)
                 }
             } else if (thisValue >= MAX_STRENGTH / 4) {
+                indicatorBox.setBackgroundColor(Color.GREEN)
                 currentlyHit = true
                 hitMax = thisValue
                 hitStart = time
@@ -201,6 +205,7 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         var max = 1
         for (sample in samples){
             max = kotlin.math.max(max, sample.peak)
+            Log.v(TAG, "$sample")
         }
 
         val outputFile = WavFile.newWavFile(FileOutputStream(File(getExternalFilesDir(null),filename)), 1, (factories[0].sampleRate * TRACK_LEN).toLong(), factories[0].validBits, factories[0].sampleRate)
@@ -215,7 +220,7 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         while (frameCounter < outputFile.numFrames) {
             // Determine how many frames to write, up to a maximum of the buffer size
             val remaining = outputFile.framesRemaining
-            Log.v(TAG, "$remaining frames left")
+//            Log.v(TAG, "$remaining frames left")
             val toWrite = if (remaining > 100) 100 else remaining.toInt()
 
             // Fill the buffer
@@ -226,6 +231,8 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
                 for (sample in samples){
                     dat += sample.getValueAtTime(frameCounter.toDouble() / outputFile.numFrames.toDouble() * TRACK_LEN)
                 }
+
+//                Log.v(TAG, "dat: $dat")
 
                 buffer[i] = dat
 
