@@ -1,5 +1,8 @@
 package com.example.bluetooth
 
+import a5.com.a5bluetoothlibrary.A5BluetoothCallback
+import a5.com.a5bluetoothlibrary.A5Device
+import a5.com.a5bluetoothlibrary.A5DeviceManager
 import android.Manifest
 import android.app.Activity
 import android.bluetooth.BluetoothAdapter
@@ -7,55 +10,60 @@ import android.bluetooth.BluetoothManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Color
+import android.media.MediaPlayer
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.CountDownTimer
-import a5.com.a5bluetoothlibrary.A5DeviceManager
-import a5.com.a5bluetoothlibrary.A5BluetoothCallback
-import a5.com.a5bluetoothlibrary.A5Device
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
+import android.support.v4.content.ContextCompat.getSystemService
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
-import android.util.Log
-import android.widget.ImageView
-import android.widget.Toast
-import kotlinx.android.synthetic.main.activity_main.*
-import java.util.*
-import android.support.v4.app.SupportActivity
-import android.support.v4.app.SupportActivity.ExtraData
-import android.support.v4.content.ContextCompat.getSystemService
-import android.icu.lang.UCharacter.GraphemeClusterBreak.T
-import android.util.DisplayMetrics
-import android.view.View
-import android.widget.ImageButton
-import android.view.LayoutInflater
-import android.os.Build
 import android.transition.Slide
-import android.graphics.Color
-import android.view.Gravity
-import kotlinx.android.synthetic.main.activity_main.*
 import android.transition.TransitionManager
+import android.util.Log
+import android.view.Gravity
+import android.view.LayoutInflater
+import android.view.View
 import android.widget.*
-
-
+import com.example.bluetooth.wav.WavFile
+import kotlinx.android.synthetic.main.activity_main.*
+import java.io.File
+import java.io.FileOutputStream
+import java.util.*
 
 
 private const val TAG = "ACTIVBEATS"
-private const val SONG_TIME_MILLIS: Long = 60 * 1000
+private const val BUFFER = 100
+private const val TRACK_LEN = 10.0
+private const val TRACK_LEN_MILLIS : Long = (TRACK_LEN * 1000).toLong()
+private const val MAX_STRENGTH = 150
+private const val APPROX_PERIOD = 100
+
+private const val CURSOR_START = 300.0.toFloat()
+private const val CURSOR_END = 2035.0.toFloat()
 
 class MainActivity : AppCompatActivity(), A5BluetoothCallback {
 
+    enum class Instrument(val index: Int) {
+        Snare(0), Kick(1), HighHat(2), TomTom(3)
+    }
+
     private var connectedDevices = mutableListOf<A5Device?>()
-    private var readings = arrayListOf<Int>()
-    private var times = arrayListOf<Long>()
     private var device: A5Device? = null
     private var counter: Int = 0
     private var countDownTimer: CountDownTimer? = null
     private var timeIsoStarted: Long = 0
-    private var songStarted: Boolean = false
-    private var cursorX: Double = 300.0
-
-
+    private var factories = arrayListOf<Sample.SampleFactory>()
+    private var players = arrayListOf<MediaPlayer>()
+    private var currentlyHit = false
+    private var hitStart: Long = 0
+    private var hitMax = 0
+    private var samples = arrayListOf<Sample>()
+    private var instrument = Instrument.Snare
+    private var otrPlayer: MediaPlayer? = null
 
 
     private lateinit var deviceAdapter: DeviceAdapter
@@ -99,6 +107,20 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        testImage.x = CURSOR_START
+
+        otrPlayer = MediaPlayer.create(this, R.raw.otr)
+
+        factories = arrayListOf(Sample.SampleFactory(WavFile.openWavFile(resources.openRawResource(R.raw.snare)), Instrument.Snare),
+        Sample.SampleFactory(WavFile.openWavFile(resources.openRawResource(R.raw.kick)), Instrument.Kick),
+        Sample.SampleFactory(WavFile.openWavFile(resources.openRawResource(R.raw.highhat)), Instrument.HighHat),
+        Sample.SampleFactory(WavFile.openWavFile(resources.openRawResource(R.raw.tomtom)), Instrument.TomTom))
+
+        players = arrayListOf(MediaPlayer.create(this, R.raw.snare),
+            MediaPlayer.create(this, R.raw.kick),
+            MediaPlayer.create(this, R.raw.highhat),
+            MediaPlayer.create(this, R.raw.tomtom))
+
         requestPermission()
         initRecyclerView()
 
@@ -114,10 +136,7 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         }
 
         startIsometricButton.setOnClickListener {
-            readings.clear()
-            times.clear()
-            timeIsoStarted = System.currentTimeMillis()
-            device?.startIsometric()
+            onRecordPressed()
         }
 
         scanDevices.setOnClickListener {
@@ -155,33 +174,55 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         }
 
         startCursor.setOnClickListener {
-            songStarted = true
+            onRecordPressed()
         }
 
         resetCursor.setOnClickListener {
-            cursorX = 300.0
-            songStarted = false
-            testImage.x = cursorX.toFloat()
+            testImage.x = CURSOR_START
+            otrPlayer?.stop()
         }
 
         emptyTrack1.setOnClickListener {
             show_popup(R.layout.popup_1)
-            beattype.setText("Hi Hat");
+            beattype.setText("Hi Hat")
+            instrument = Instrument.HighHat
         }
         emptyTrack2.setOnClickListener {
             show_popup(R.layout.popup_2)
-            beattype.setText("Snare Drum");
+            beattype.setText("Snare Drum")
+            instrument = Instrument.Snare
         }
         emptyTrack3.setOnClickListener {
             show_popup(R.layout.popup_3)
-            beattype.setText("Kick");
+            beattype.setText("Kick")
+            instrument = Instrument.Kick
         }
         emptyTrack4.setOnClickListener {
             show_popup(R.layout.popup_4)
-            beattype.setText("Tom Tom");
+            beattype.setText("Tom Tom")
+            instrument = Instrument.TomTom
         }
+    }
 
-        testImage.x = cursorX.toFloat()
+    private fun onRecordPressed() {
+        currentlyHit = false
+        otrPlayer?.seekTo(0)
+        otrPlayer?.start()
+        timeIsoStarted = System.currentTimeMillis()
+        device?.startIsometric()
+    }
+
+    private fun onActivPress(time: Long, value: Int){
+        players[instrument.index].seekTo(0)
+        players[instrument.index].start()
+        currentlyHit = true
+        hitMax = value
+        hitStart = time
+    }
+
+    private fun onActivRelease(time: Long, value: Int){
+        currentlyHit = false
+        samples.add(factories[instrument.index].getSample(hitMax /*- MAX_STRENGTH/4*/, time - hitStart, hitStart - timeIsoStarted))
     }
 
     @Synchronized
@@ -194,45 +235,107 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         }
     }
 
-    @Synchronized
-    private fun print2(name: String, value: Int) {
-        runOnUiThread {
-            pressureChangedTextView2.text =
-                String.format(
-                    Locale.US, "%s: %d", name, value
-                )
-        }
-    }
-
     private fun manageReceiveIsometric(thisDevice: A5Device, thisValue: Int) {
         val time = System.currentTimeMillis()
-        //var testImage: ImageView = findViewById(R.id.testImage)
-        if (time > timeIsoStarted + SONG_TIME_MILLIS){
+        if (time > timeIsoStarted + TRACK_LEN_MILLIS) {
             thisDevice.stop()
+            testImage.x = CURSOR_END
+            if (currentlyHit) {
+                onActivRelease(timeIsoStarted + TRACK_LEN_MILLIS, 0)
+            }
         } else {
+            for (sample in samples) {
+                if (sample.instrument != instrument && sample.start * 1000 > (time - timeIsoStarted) && sample.start * 1000 < (time - timeIsoStarted) + APPROX_PERIOD) {
+                    players[sample.instrument.index].seekTo(0)
+                    players[sample.instrument.index].start()
+                }
+            }
+            testImage.x =
+                CURSOR_START + (CURSOR_END - CURSOR_START) * (time - timeIsoStarted).toFloat() / TRACK_LEN_MILLIS.toFloat()
             print(thisDevice.device.name, thisValue)
-            readings.add(thisValue)
-            times.add(time)
-            Log.v(TAG, "$time, $thisValue")
-            //xCoord+=10.0
-            //testImage.x = xCoord.toFloat()
+            if (currentlyHit) {
+                if (thisValue < MAX_STRENGTH / 4) {
+                    onActivRelease(time, thisValue)
+                } else {
+                    hitMax = kotlin.math.max(hitMax, thisValue)
+                }
+            } else if (thisValue >= MAX_STRENGTH / 4) {
+                onActivPress(time, thisValue)
+            }
+        }
+    }
+
+    private fun export(filename: String) {
+        Log.v(TAG, "export started")
+
+        var max = 1
+        for (sample in samples){
+            max = kotlin.math.max(max, sample.peak)
+            Log.v(TAG, "$sample")
         }
 
-        if (songStarted) {
-            startCursor()
+        val outFile = File(getExternalFilesDir(null),filename)
+        val wavFile = WavFile.newWavFile(FileOutputStream(outFile), 1, (factories[0].sampleRate * TRACK_LEN).toLong(), factories[0].validBits, factories[0].sampleRate)
+
+        Log.v(TAG, "Output file opened")
+
+        var buffer = DoubleArray(BUFFER)
+
+        var frameCounter: Long = 0
+
+        // Loop until all frames written
+        while (frameCounter < wavFile.numFrames) {
+            // Determine how many frames to write, up to a maximum of the buffer size
+            val remaining = wavFile.framesRemaining
+//            Log.v(TAG, "$remaining frames left")
+            val toWrite = if (remaining > 100) 100 else remaining.toInt()
+
+            // Fill the buffer
+            for (i in 0 until toWrite){
+                var dat = 0.0
+
+                //Add in each sample
+                for (sample in samples){
+                    dat += sample.getClipAtFrame(frameCounter)
+                }
+
+                buffer[i] = dat
+
+                frameCounter++
+            }
+
+            // Write the buffer
+            wavFile.writeFrames(buffer, toWrite)
         }
+
+        Log.v(TAG, "Export finished")
+
+        wavFile.close()
+
+        val outputPlayer = MediaPlayer.create(this, Uri.fromFile(outFile))
+        outputPlayer.start()
     }
-    // ??????
-    fun startCursor() {
-        if(cursorX >= 2000) {
-            songStarted = false
-            cursorX += 13.0
-            testImage.x = cursorX.toFloat()
+
+    private fun stretchTimeSeries(data : ArrayList<Int>, time : ArrayList<Long>, newLength : Int) : FloatArray {
+        val toRet = FloatArray(newLength)
+        val start = time[0]
+        val timeStep : Double = (time[time.size - 1] - start).toDouble() / (newLength - 1).toDouble()
+        var currentIndex = 0
+        for (i in toRet.indices) {
+            val thisTime = i*timeStep
+            while(thisTime > (time[currentIndex + 1] - start)){
+                currentIndex++
+                if (currentIndex >= time.size - 1){
+                    toRet.fill(data[data.size - 1].toFloat(), i)
+                    return toRet
+                }
+            }
+            val linearInterp : Double = (thisTime - (time[currentIndex] - start)) / (time[currentIndex + 1] - time[currentIndex]).toDouble()
+            toRet[i] = data[currentIndex].toFloat() + linearInterp.toFloat()*(data[currentIndex + 1] - data[currentIndex]).toFloat()
         }
-        cursorX += 17.0
-        testImage.x = cursorX.toFloat()
+        return toRet
     }
-    // ????
+
     fun deviceSelected(device: A5Device) {
         this.device = device
         Toast.makeText(this, "device selected: " + device.device.name, Toast.LENGTH_SHORT).show()
