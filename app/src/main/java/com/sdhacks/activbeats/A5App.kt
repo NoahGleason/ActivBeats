@@ -1,4 +1,4 @@
-package com.example.bluetooth
+package com.sdhacks.activbeats
 
 import a5.com.a5bluetoothlibrary.A5DeviceManager
 import android.app.Application
