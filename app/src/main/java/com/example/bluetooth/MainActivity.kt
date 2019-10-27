@@ -13,6 +13,8 @@ import a5.com.a5bluetoothlibrary.A5DeviceManager
 import a5.com.a5bluetoothlibrary.A5BluetoothCallback
 import a5.com.a5bluetoothlibrary.A5Device
 import android.graphics.Color
+import android.media.MediaPlayer
+import android.net.Uri
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
 import android.support.v7.app.AppCompatActivity
@@ -31,8 +33,13 @@ private const val BUFFER = 100
 private const val TRACK_LEN = 10.0
 private const val TRACK_LEN_MILLIS : Long = (TRACK_LEN * 1000).toLong()
 private const val MAX_STRENGTH = 150
+private const val APPROX_PERIOD = 100
 
 class MainActivity : AppCompatActivity(), A5BluetoothCallback {
+
+    enum class Instrument(val index: Int) {
+        Snare(0), Kick(1), HighHat(2), TomTom(3)
+    }
 
     private var connectedDevices = mutableListOf<A5Device?>()
     private var device: A5Device? = null
@@ -40,11 +47,13 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
     private var countDownTimer: CountDownTimer? = null
     private var timeIsoStarted: Long = 0
     private var factories = arrayListOf<Sample.SampleFactory>()
+    private var players = arrayListOf<MediaPlayer>()
     private var currentlyHit = false
     private var hitStart: Long = 0
     private var hitMax = 0
     private var samples = arrayListOf<Sample>()
-    private var instrument = 0
+    private var instrument = Instrument.Snare
+    private var otrPlayer: MediaPlayer? = null
 
     private lateinit var deviceAdapter: DeviceAdapter
 
@@ -86,10 +95,17 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        factories = arrayListOf(Sample.SampleFactory(WavFile.openWavFile(resources.openRawResource(R.raw.snare))),
-        Sample.SampleFactory(WavFile.openWavFile(resources.openRawResource(R.raw.kick))),
-        Sample.SampleFactory(WavFile.openWavFile(resources.openRawResource(R.raw.highhat))),
-        Sample.SampleFactory(WavFile.openWavFile(resources.openRawResource(R.raw.tomtom))))
+//        otrPlayer = MediaPlayer.create(this, R.raw.oldtownroad)
+
+        factories = arrayListOf(Sample.SampleFactory(WavFile.openWavFile(resources.openRawResource(R.raw.snare)), Instrument.Snare),
+        Sample.SampleFactory(WavFile.openWavFile(resources.openRawResource(R.raw.kick)), Instrument.Kick),
+        Sample.SampleFactory(WavFile.openWavFile(resources.openRawResource(R.raw.highhat)), Instrument.HighHat),
+        Sample.SampleFactory(WavFile.openWavFile(resources.openRawResource(R.raw.tomtom)), Instrument.TomTom))
+
+        players = arrayListOf(MediaPlayer.create(this, R.raw.snare),
+            MediaPlayer.create(this, R.raw.kick),
+            MediaPlayer.create(this, R.raw.highhat),
+            MediaPlayer.create(this, R.raw.tomtom))
 
         requestPermission()
         initRecyclerView()
@@ -118,7 +134,12 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
 
         startIsometricButton.setOnClickListener {
             currentlyHit = false
-            instrument = trackIndex.text.toString().toInt()
+            when (trackIndex.text.toString().toInt()){
+                0 -> instrument = Instrument.Snare
+                1 -> instrument = Instrument.Kick
+                2 -> instrument = Instrument.HighHat
+                3 -> instrument = Instrument.TomTom
+            }
             timeIsoStarted = System.currentTimeMillis()
             device?.startIsometric()
         }
@@ -156,20 +177,28 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
             thisDevice.stop()
             indicatorBox.setBackgroundColor(Color.GRAY)
             if (currentlyHit) {
-                samples.add(factories[instrument].getSample(hitMax /*- MAX_STRENGTH/4*/, timeIsoStarted + TRACK_LEN_MILLIS - hitStart, hitStart - timeIsoStarted))
+                samples.add(factories[instrument.index].getSample(hitMax /*- MAX_STRENGTH/4*/, timeIsoStarted + TRACK_LEN_MILLIS - hitStart, hitStart - timeIsoStarted))
             }
         } else {
+            for (sample in samples){
+                if (sample.instrument != instrument && sample.start*1000 > (time-timeIsoStarted) && sample.start*1000 < (time-timeIsoStarted) + APPROX_PERIOD){
+                    players[sample.instrument.index].seekTo(0)
+                    players[sample.instrument.index].start()
+                }
+            }
             print(thisDevice.device.name, thisValue)
             if (currentlyHit) {
                 if (thisValue < MAX_STRENGTH / 4){
                     indicatorBox.setBackgroundColor(Color.RED)
                     currentlyHit = false
-                    samples.add(factories[instrument].getSample(hitMax /*- MAX_STRENGTH/4*/, time - hitStart, hitStart - timeIsoStarted))
+                    samples.add(factories[instrument.index].getSample(hitMax /*- MAX_STRENGTH/4*/, time - hitStart, hitStart - timeIsoStarted))
                 } else {
                     hitMax = kotlin.math.max(hitMax, thisValue)
                 }
             } else if (thisValue >= MAX_STRENGTH / 4) {
                 indicatorBox.setBackgroundColor(Color.GREEN)
+                players[instrument.index].seekTo(0)
+                players[instrument.index].start()
                 currentlyHit = true
                 hitMax = thisValue
                 hitStart = time
@@ -206,7 +235,8 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
             Log.v(TAG, "$sample")
         }
 
-        val outputFile = WavFile.newWavFile(FileOutputStream(File(getExternalFilesDir(null),filename)), 1, (factories[0].sampleRate * TRACK_LEN).toLong(), factories[0].validBits, factories[0].sampleRate)
+        val outFile = File(getExternalFilesDir(null),filename)
+        val wavFile = WavFile.newWavFile(FileOutputStream(outFile), 1, (factories[0].sampleRate * TRACK_LEN).toLong(), factories[0].validBits, factories[0].sampleRate)
 
         Log.v(TAG, "Output file opened")
 
@@ -215,9 +245,9 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         var frameCounter: Long = 0
 
         // Loop until all frames written
-        while (frameCounter < outputFile.numFrames) {
+        while (frameCounter < wavFile.numFrames) {
             // Determine how many frames to write, up to a maximum of the buffer size
-            val remaining = outputFile.framesRemaining
+            val remaining = wavFile.framesRemaining
 //            Log.v(TAG, "$remaining frames left")
             val toWrite = if (remaining > 100) 100 else remaining.toInt()
 
@@ -236,12 +266,15 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
             }
 
             // Write the buffer
-            outputFile.writeFrames(buffer, toWrite)
+            wavFile.writeFrames(buffer, toWrite)
         }
 
         Log.v(TAG, "Export finished")
 
-        outputFile.close()
+        wavFile.close()
+
+        val outputPlayer = MediaPlayer.create(this, Uri.fromFile(outFile))
+        outputPlayer.start()
     }
 
     fun deviceSelected(device: A5Device) {

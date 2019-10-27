@@ -6,12 +6,13 @@ import com.example.bluetooth.wav.WavFile
 class Sample(
     val peak: Int,
     private val duration: Double,
-    private val start: Double,
+    val start: Double,
     private val data: DoubleArray,
-    private val sampleRate: Long
+    sampleRate: Long,
+    val instrument: MainActivity.Instrument
 ) {
 
-    class SampleFactory(wav: WavFile) {
+    class SampleFactory(wav: WavFile, var instrument: MainActivity.Instrument) {
 
         private var data : DoubleArray? = null
         private val naturalDuration : Double
@@ -28,8 +29,8 @@ class Sample(
         }
 
         fun getSample(peak : Int, duration: Long, start: Long) : Sample {
-            return Sample(peak, duration.toDouble() / 1000.0, start.toDouble() / 1000.0, data!!, sampleRate)
-//            return Sample(peak, naturalDuration, start.toDouble() / 1000.0, data!!, sampleRate)
+//            return Sample(peak, duration.toDouble() / 1000.0, start.toDouble() / 1000.0, data!!, sampleRate)
+            return Sample(peak, naturalDuration, start.toDouble() / 1000.0, data!!, sampleRate, instrument)
 
         }
     }
@@ -40,10 +41,10 @@ class Sample(
     private val speedFrac : Double
 
     init {
-        if (duration > naturalDuration){
-            speedFrac = 1.0/kotlin.math.round(duration / naturalDuration)
+        speedFrac = if (duration > naturalDuration){
+            1.0/kotlin.math.round(duration / naturalDuration)
         } else {
-            speedFrac = kotlin.math.round(naturalDuration / duration)
+            kotlin.math.round(naturalDuration / duration)
         }
     }
 
