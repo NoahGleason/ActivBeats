@@ -27,28 +27,6 @@
             android:id="@+id/recyclerView"
             android:layout_height="100dp"/>
 
-    <TextView
-        android:id="@+id/pressureChangedTextView1"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:background="@color/colorPrimary"
-        android:padding="8dp"
-        android:textColor="@android:color/white"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentEnd="true"/>
-
-    <TextView
-            android:background="@color/colorPrimary"
-            android:id="@+id/pressureChangedTextView2"
-            android:textColor="@android:color/white"
-            android:layout_margin="8dp"
-            android:layout_toEndOf="@id/pressureChangedTextView1"
-            android:padding="8dp"
-            android:layout_width="wrap_content"
-            android:layout_below="@id/recyclerView"
-            android:layout_height="wrap_content"
-            android:visibility="invisible"/>
-
     <Button
         android:id="@+id/connectButton"
         android:layout_width="wrap_content"
@@ -78,19 +56,6 @@
         android:textColor="@android:color/white" />
 
     <Button
-        android:id="@+id/startIsometricButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_marginStart="0dp"
-        android:layout_marginBottom="0dp"
-        android:layout_toEndOf="@+id/disconnectButton"
-        android:background="@color/colorPrimaryDark"
-        android:padding="8dp"
-        android:text="@string/start_isometric"
-        android:textColor="@android:color/white" />
-
-    <Button
         android:id="@+id/scanDevices"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -112,7 +77,7 @@
         android:layout_marginStart="8dp"
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="0dp"
-        android:layout_toEndOf="@+id/startIsometricButton"
+        android:layout_toEndOf="@+id/disconnectButton"
         android:background="@color/colorPrimaryDark"
         android:padding="8dp"
         android:text="@string/go"
@@ -366,4 +331,18 @@
         android:visibility="invisible"
         android:layout_toRightOf="@+id/currentbeat"
         android:layout_alignParentBottom="true"/>
+
+    <Button
+        android:id="@+id/backButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="0dp"
+        android:background="@color/colorPrimaryDark"
+        android:padding="8dp"
+        android:layout_marginStart="8dp"
+        android:text="@string/back"
+        android:textColor="@android:color/white"
+        android:visibility="invisible"
+        android:layout_alignParentRight="true"/>
 </RelativeLayout>
