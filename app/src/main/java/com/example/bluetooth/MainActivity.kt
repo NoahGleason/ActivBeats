@@ -95,7 +95,7 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-//        otrPlayer = MediaPlayer.create(this, R.raw.oldtownroad)
+        otrPlayer = MediaPlayer.create(this, R.raw.otr)
 
         factories = arrayListOf(Sample.SampleFactory(WavFile.openWavFile(resources.openRawResource(R.raw.snare)), Instrument.Snare),
         Sample.SampleFactory(WavFile.openWavFile(resources.openRawResource(R.raw.kick)), Instrument.Kick),
@@ -124,6 +124,7 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         sendStopCommandButton.setOnClickListener {
             device?.stop()
             samples.clear()
+            otrPlayer?.stop()
             startTimer()
         }
 
@@ -133,14 +134,7 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         }
 
         startIsometricButton.setOnClickListener {
-            currentlyHit = false
-            when (trackIndex.text.toString().toInt()){
-                0 -> instrument = Instrument.Snare
-                1 -> instrument = Instrument.Kick
-                2 -> instrument = Instrument.HighHat
-                3 -> instrument = Instrument.TomTom
-            }
-            timeIsoStarted = System.currentTimeMillis()
+            onRecordPressed()
             device?.startIsometric()
         }
 
@@ -161,6 +155,34 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         }
     }
 
+    private fun onRecordPressed() {
+        currentlyHit = false
+        otrPlayer?.seekTo(0)
+        otrPlayer?.start()
+        when (trackIndex.text.toString().toInt()){
+            0 -> instrument = Instrument.Snare
+            1 -> instrument = Instrument.Kick
+            2 -> instrument = Instrument.HighHat
+            3 -> instrument = Instrument.TomTom
+        }
+        timeIsoStarted = System.currentTimeMillis()
+    }
+
+    private fun onActivPress(time: Long, value: Int){
+        indicatorBox.setBackgroundColor(Color.GREEN)
+        players[instrument.index].seekTo(0)
+        players[instrument.index].start()
+        currentlyHit = true
+        hitMax = value
+        hitStart = time
+    }
+
+    private fun onActivRelease(time: Long, value: Int){
+        indicatorBox.setBackgroundColor(Color.RED)
+        currentlyHit = false
+        samples.add(factories[instrument.index].getSample(hitMax /*- MAX_STRENGTH/4*/, time - hitStart, hitStart - timeIsoStarted))
+    }
+
     @Synchronized
     private fun print(name: String, value: Int) {
         runOnUiThread {
@@ -175,10 +197,10 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
         val time = System.currentTimeMillis()
         if (time > timeIsoStarted + TRACK_LEN_MILLIS){
             thisDevice.stop()
-            indicatorBox.setBackgroundColor(Color.GRAY)
             if (currentlyHit) {
-                samples.add(factories[instrument.index].getSample(hitMax /*- MAX_STRENGTH/4*/, timeIsoStarted + TRACK_LEN_MILLIS - hitStart, hitStart - timeIsoStarted))
+                onActivRelease(timeIsoStarted + TRACK_LEN_MILLIS, 0)
             }
+            indicatorBox.setBackgroundColor(Color.GRAY)
         } else {
             for (sample in samples){
                 if (sample.instrument != instrument && sample.start*1000 > (time-timeIsoStarted) && sample.start*1000 < (time-timeIsoStarted) + APPROX_PERIOD){
@@ -189,41 +211,14 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
             print(thisDevice.device.name, thisValue)
             if (currentlyHit) {
                 if (thisValue < MAX_STRENGTH / 4){
-                    indicatorBox.setBackgroundColor(Color.RED)
-                    currentlyHit = false
-                    samples.add(factories[instrument.index].getSample(hitMax /*- MAX_STRENGTH/4*/, time - hitStart, hitStart - timeIsoStarted))
+                    onActivRelease(time, thisValue)
                 } else {
                     hitMax = kotlin.math.max(hitMax, thisValue)
                 }
             } else if (thisValue >= MAX_STRENGTH / 4) {
-                indicatorBox.setBackgroundColor(Color.GREEN)
-                players[instrument.index].seekTo(0)
-                players[instrument.index].start()
-                currentlyHit = true
-                hitMax = thisValue
-                hitStart = time
+                onActivPress(time, thisValue)
             }
         }
-    }
-
-    private fun stretchTimeSeries(data : ArrayList<Int>, time : ArrayList<Long>, newLength : Int) : FloatArray {
-        val toRet = FloatArray(newLength)
-        val start = time[0]
-        val timeStep : Double = (time[time.size - 1] - start).toDouble() / (newLength - 1).toDouble()
-        var currentIndex = 0
-        for (i in toRet.indices) {
-            val thisTime = i*timeStep
-            while(thisTime > (time[currentIndex + 1] - start)){
-                currentIndex++
-                if (currentIndex >= time.size - 1){
-                    toRet.fill(data[data.size - 1].toFloat(), i)
-                    return toRet
-                }
-            }
-            val linearInterp : Double = (thisTime - (time[currentIndex] - start)) / (time[currentIndex + 1] - time[currentIndex]).toDouble()
-            toRet[i] = data[currentIndex].toFloat() + linearInterp.toFloat()*(data[currentIndex + 1] - data[currentIndex]).toFloat()
-        }
-        return toRet
     }
 
     private fun export(filename: String) {
@@ -275,6 +270,26 @@ class MainActivity : AppCompatActivity(), A5BluetoothCallback {
 
         val outputPlayer = MediaPlayer.create(this, Uri.fromFile(outFile))
         outputPlayer.start()
+    }
+
+    private fun stretchTimeSeries(data : ArrayList<Int>, time : ArrayList<Long>, newLength : Int) : FloatArray {
+        val toRet = FloatArray(newLength)
+        val start = time[0]
+        val timeStep : Double = (time[time.size - 1] - start).toDouble() / (newLength - 1).toDouble()
+        var currentIndex = 0
+        for (i in toRet.indices) {
+            val thisTime = i*timeStep
+            while(thisTime > (time[currentIndex + 1] - start)){
+                currentIndex++
+                if (currentIndex >= time.size - 1){
+                    toRet.fill(data[data.size - 1].toFloat(), i)
+                    return toRet
+                }
+            }
+            val linearInterp : Double = (thisTime - (time[currentIndex] - start)) / (time[currentIndex + 1] - time[currentIndex]).toDouble()
+            toRet[i] = data[currentIndex].toFloat() + linearInterp.toFloat()*(data[currentIndex + 1] - data[currentIndex]).toFloat()
+        }
+        return toRet
     }
 
     fun deviceSelected(device: A5Device) {
